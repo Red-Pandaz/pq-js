@@ -6,6 +6,15 @@ const mlkemVariants = [
   'mlkem_1024'
 ];
 
+const frodoKEMVariants = [
+  'frodokem_640_aes',
+  'frodokem_640_shake',
+  'frodokem_976_aes',
+  'frodokem_976_shake',
+  'frodokem_1344_aes',
+  'frodokem_1344_shake'
+];
+
 function randomBytes(length) {
   const arr = new Uint8Array(length);
   for (let i = 0; i < length; i++) arr[i] = Math.floor(Math.random() * 256);
@@ -87,6 +96,7 @@ async function runKEMTests() {
   try {
     console.log('Initializing PQC KEMs...');
     const { mlkem } = await createPQ();
+    const { frodokem } = await createPQ();
     console.log('Initialization complete, starting KEM tests...');
 
     const results = {};
@@ -94,8 +104,16 @@ async function runKEMTests() {
       results[variant] = await testKEMVariant(variant, mlkem[variant]);
     }
 
+    for (const variant of frodoKEMVariants) {
+      results[variant] = await testKEMVariant(variant, frodokem[variant]);
+    }
+
     console.log('\nKEM Test Results:');
     for (const variant of mlkemVariants) {
+      console.log(`${variant}:`, results[variant] ? 'PASS' : 'FAIL');
+    }
+
+    for (const variant of frodoKEMVariants) {
       console.log(`${variant}:`, results[variant] ? 'PASS' : 'FAIL');
     }
 
@@ -105,8 +123,16 @@ async function runKEMTests() {
       fuzzResults[variant] = await fuzzTestKEMVariant(variant, mlkem[variant]);
     }
 
+    for (const variant of frodoKEMVariants) {
+      fuzzResults[variant] = await fuzzTestKEMVariant(variant, frodokem[variant]);
+    }
+
     console.log('\nKEM Fuzz Test Results:');
     for (const variant of mlkemVariants) {
+      console.log(`${variant}:`, fuzzResults[variant] ? 'PASS' : 'FAIL');
+    }
+
+    for (const variant of frodoKEMVariants) {
       console.log(`${variant}:`, fuzzResults[variant] ? 'PASS' : 'FAIL');
     }
   } catch (error) {
