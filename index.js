@@ -3,14 +3,17 @@ const { init: initSphincs, cleanup: cleanupSphincs } = require('./sig/sphincs/sr
 const { init: initFalcon, cleanup: cleanupFalcon } = require('./sig/falcon/src/index.js');
 const { init: initMLKEM, cleanup: cleanupMLKEM } = require('./kem/mlkem/src/index.js'); 
 const { init: initFrodoKEM, cleanup: cleanupFrodoKEM } = require('./kem/frodokem/src/index.js');
+const { initSmall: initMcElieceSmall, initFull: initMcElieceFull, cleanupSmall: cleanupMcElieceSmall, cleanupFull: cleanupMcElieceFull } = require('./kem/classic_mceliece/src/index.js');
 
+// By default, createPQ uses the small build for Classic McEliece (only small/medium variants, 512MB RAM)
 async function createPQ() {
   const dilithium = await initDilithium();
   const sphincs = await initSphincs();
   const falcon = await initFalcon();
   const mlkem = await initMLKEM();
   const frodokem = await initFrodoKEM();
-  return { dilithium, sphincs, falcon, mlkem, frodokem };
+  const mceliece = await initMcElieceSmall();
+  return { dilithium, sphincs, falcon, mlkem, frodokem, mceliece };
 }
 
 function cleanupPQ() {
@@ -19,6 +22,27 @@ function cleanupPQ() {
   cleanupFalcon();
   cleanupMLKEM();
   cleanupFrodoKEM();
+  cleanupMcElieceSmall();
 }
 
-module.exports = { createPQ, cleanupPQ };
+// createPQFull uses the full build for Classic McEliece (all variants, 2GB RAM)
+async function createPQFull() {
+  const dilithium = await initDilithium();
+  const sphincs = await initSphincs();
+  const falcon = await initFalcon();
+  const mlkem = await initMLKEM();
+  const frodokem = await initFrodoKEM();
+  const mceliece = await initMcElieceFull();
+  return { dilithium, sphincs, falcon, mlkem, frodokem, mceliece };
+}
+
+function cleanupPQFull() {
+  cleanupDilithium();
+  cleanupSphincs();
+  cleanupFalcon();
+  cleanupMLKEM();
+  cleanupFrodoKEM();
+  cleanupMcElieceFull();
+}
+
+module.exports = { createPQ, cleanupPQ, createPQFull, cleanupPQFull };

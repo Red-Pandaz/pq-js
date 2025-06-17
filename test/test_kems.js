@@ -1,4 +1,7 @@
-const { createPQ } = require('../index.js'); // Adjust path if needed
+const { createPQ, createPQFull } = require('../index.js'); // Adjust path if needed
+
+// Set this flag to true to test the full build (all McEliece variants, 2GB RAM)
+const TEST_FULL_MCELIECE = false; // Change to true to test full build
 
 const mlkemVariants = [
   'mlkem_512',
@@ -14,6 +17,25 @@ const frodoKEMVariants = [
   'frodokem_1344_aes',
   'frodokem_1344_shake'
 ];
+
+const mcelieceSmallVariants = [
+  'classic_mceliece_348864',
+  'classic_mceliece_348864f',
+  'classic_mceliece_460896',
+  'classic_mceliece_460896f'
+];
+
+const mcelieceFullVariants = [
+  ...mcelieceSmallVariants,
+  'classic_mceliece_6688128',
+  'classic_mceliece_6688128f',
+  'classic_mceliece_6960119',
+  'classic_mceliece_6960119f',
+  'classic_mceliece_8192128',
+  'classic_mceliece_8192128f'
+];
+
+const mcelieceVariants = TEST_FULL_MCELIECE ? mcelieceFullVariants : mcelieceSmallVariants;
 
 function randomBytes(length) {
   const arr = new Uint8Array(length);
@@ -95,8 +117,11 @@ async function fuzzTestKEMVariant(name, wrapper) {
 async function runKEMTests() {
   try {
     console.log('Initializing PQC KEMs...');
+    console.log(`Testing Classic McEliece ${TEST_FULL_MCELIECE ? 'FULL (all variants, 2GB RAM)' : 'SMALL (small/medium variants, 512MB RAM)'}`);
     const { mlkem } = await createPQ();
     const { frodokem } = await createPQ();
+    const pq = TEST_FULL_MCELIECE ? await createPQFull() : await createPQ();
+    const mceliece = pq.mceliece;
     console.log('Initialization complete, starting KEM tests...');
 
     const results = {};
@@ -108,12 +133,20 @@ async function runKEMTests() {
       results[variant] = await testKEMVariant(variant, frodokem[variant]);
     }
 
+    for (const variant of mcelieceVariants) {
+      results[variant] = await testKEMVariant(variant, mceliece[variant]);
+    }
+
     console.log('\nKEM Test Results:');
     for (const variant of mlkemVariants) {
       console.log(`${variant}:`, results[variant] ? 'PASS' : 'FAIL');
     }
 
     for (const variant of frodoKEMVariants) {
+      console.log(`${variant}:`, results[variant] ? 'PASS' : 'FAIL');
+    }
+
+    for (const variant of mcelieceVariants) {
       console.log(`${variant}:`, results[variant] ? 'PASS' : 'FAIL');
     }
 
@@ -127,12 +160,20 @@ async function runKEMTests() {
       fuzzResults[variant] = await fuzzTestKEMVariant(variant, frodokem[variant]);
     }
 
+    for (const variant of mcelieceVariants) {
+      fuzzResults[variant] = await fuzzTestKEMVariant(variant, mceliece[variant]);
+    }
+
     console.log('\nKEM Fuzz Test Results:');
     for (const variant of mlkemVariants) {
       console.log(`${variant}:`, fuzzResults[variant] ? 'PASS' : 'FAIL');
     }
 
     for (const variant of frodoKEMVariants) {
+      console.log(`${variant}:`, fuzzResults[variant] ? 'PASS' : 'FAIL');
+    }
+
+    for (const variant of mcelieceVariants) {
       console.log(`${variant}:`, fuzzResults[variant] ? 'PASS' : 'FAIL');
     }
   } catch (error) {
