@@ -1,9 +1,15 @@
-export default init;
-const initDilithium = require('./dilithium/index.js');
+const { init: initDilithium, cleanup: cleanupDilithium } = require('./dilithium/src/index.js');
+const { init: initSphincs, cleanup: cleanupSphincs } = require('./sphincs/src/index.js');
 
 async function createPQ() {
   const dilithium = await initDilithium();
-  return { dilithium };
+  const sphincs = await initSphincs();
+  return { dilithium, sphincs };
 }
 
-module.exports = { createPQ };
+function cleanupPQ() {
+  cleanupDilithium();
+  cleanupSphincs();
+}
+
+module.exports = { createPQ, cleanupPQ };
