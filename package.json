@@ -14,7 +14,6 @@
   },
   "type": "commonjs",
   "main": "dist/index.js",
-  "browser": "dist/index.browser.js",
   "types": "dist/index.d.ts",
   "bin": {
     "pq-js": "dist/cli.js"
@@ -29,8 +28,7 @@
     "test:cli": "ts-node test/test_cli.ts",
     "test:kems": "ts-node test/test_kems.ts",
     "test:signatures": "ts-node test/test_signatures.ts",
-    "build": "tsc && npm run copy-wrappers && npm run build-browser",
-    "build-browser": "webpack --mode production",
+    "build": "tsc && npm run copy-wrappers",
     "copy-wrappers": "mkdir -p dist/kem dist/sig && cp kem/*/dist/*.js dist/kem/ && cp kem/*/dist/*.wasm dist/kem/ && cp sig/*/dist/*.js dist/sig/ && cp sig/*/dist/*.wasm dist/sig/ && mkdir -p dist/sig/dilithium/dist dist/sig/falcon/dist dist/sig/sphincs/dist dist/kem/mlkem/dist dist/kem/frodokem/dist dist/kem/classic_mceliece/dist && cp sig/dilithium/dist/* dist/sig/dilithium/dist/ && cp sig/falcon/dist/* dist/sig/falcon/dist/ && cp sig/sphincs/dist/* dist/sig/sphincs/dist/ && cp kem/mlkem/dist/* dist/kem/mlkem/dist/ && cp kem/frodokem/dist/* dist/kem/frodokem/dist/ && cp kem/classic_mceliece/dist/* dist/kem/classic_mceliece/dist/",
     "cli": "node dist/cli.js",
     "prepublishOnly": "npm run build"
@@ -39,9 +37,6 @@
     "@types/node": "^24.0.3",
     "copyfiles": "^2.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "webpack": "^5.89.0",
-    "webpack-cli": "^5.1.4",
-    "ts-loader": "^9.5.1"
+    "typescript": "^5.8.3"
   }
 }
