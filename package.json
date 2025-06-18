@@ -4,6 +4,14 @@
   "description": "⚠️ AI-generated, unaudited post-quantum cryptography library built on liboqs 0.13.0. Use at your own risk. See README for details.",
   "license": "MIT",
   "author": "David Alexander Millstone",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Red-Pandaz/pq-js.git"
+  },
+  "homepage": "https://github.com/Red-Pandaz/pq-js#readme",
+  "bugs": {
+    "url": "https://github.com/Red-Pandaz/pq-js/issues"
+  },
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
