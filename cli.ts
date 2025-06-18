@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createPQ, createPQFull } from './index';
+const { createPQ, createPQFull } = require('./index');
 
 // CLI argument parsing
 const args = process.argv.slice(2);
@@ -98,8 +98,8 @@ async function runCLI() {
       case 'generateKey':
         const keypair = wrapper.generateKeypair();
         console.log('Generated keypair:');
-        console.log(`Public key (${keypair.publicKey.length} bytes):`, keypair.publicKey.toString('hex'));
-        console.log(`Secret key (${keypair.secretKey.length} bytes):`, keypair.secretKey.toString('hex'));
+        console.log(`Public key (${keypair.publicKey.length} bytes):`, Buffer.from(keypair.publicKey).toString('hex'));
+        console.log(`Secret key (${keypair.secretKey.length} bytes):`, Buffer.from(keypair.secretKey).toString('hex'));
         break;
 
       case 'sign':
@@ -147,10 +147,10 @@ async function runCLI() {
           process.exit(1);
         }
         const publicKey2 = Buffer.from(publicKeyHex2, 'hex');
-        const { ciphertext, sharedSecret } = wrapper.encapsulate(publicKey2);
+        const { ciphertext: encCiphertext, sharedSecret: encSharedSecret } = wrapper.encapsulate(publicKey2);
         console.log('Encapsulation result:');
-        console.log(`Ciphertext (${ciphertext.length} bytes):`, ciphertext.toString('hex'));
-        console.log(`Shared secret (${sharedSecret.length} bytes):`, sharedSecret.toString('hex'));
+        console.log(`Ciphertext (${encCiphertext.length} bytes):`, encCiphertext.toString('hex'));
+        console.log(`Shared secret (${encSharedSecret.length} bytes):`, encSharedSecret.toString('hex'));
         break;
 
       case 'decapsulate':
@@ -164,9 +164,9 @@ async function runCLI() {
           console.error('Error: ciphertext and secret key required for decapsulation');
           process.exit(1);
         }
-        const ciphertext = Buffer.from(ciphertextHex, 'hex');
+        const decCiphertext = Buffer.from(ciphertextHex, 'hex');
         const secretKey2 = Buffer.from(secretKeyHex2, 'hex');
-        const sharedSecret2 = wrapper.decapsulate(ciphertext, secretKey2);
+        const sharedSecret2 = wrapper.decapsulate(decCiphertext, secretKey2);
         console.log('Decapsulation result:');
         console.log(`Shared secret (${sharedSecret2.length} bytes):`, sharedSecret2.toString('hex'));
         break;
@@ -183,4 +183,4 @@ async function runCLI() {
   }
 }
 
-runCLI(); 
+runCLI();

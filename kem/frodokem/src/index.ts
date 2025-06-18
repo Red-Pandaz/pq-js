@@ -1,6 +1,6 @@
 const createFrodoKEMModule = require('../dist/frodokem_wrapper.js');
 
-const variantNames: string[] = [
+const frodokemVariantNames: string[] = [
   'frodokem_640_aes',
   'frodokem_640_shake',
   'frodokem_976_aes',
@@ -9,8 +9,8 @@ const variantNames: string[] = [
   'frodokem_1344_shake'
 ];
 
-let moduleInstance: any = null;
-let wrappers: Record<string, any> | null = null;
+let frodokemModuleInstance: any = null;
+let frodokemWrappers: Record<string, any> | null = null;
 
 async function createFrodoKEMWrapper(variant: string): Promise<any> {
   const Module: any = await createFrodoKEMModule();
@@ -89,19 +89,19 @@ async function createFrodoKEMWrapper(variant: string): Promise<any> {
   };
 }
 
-async function init(): Promise<Record<string, any>> {
-  if (wrappers) return wrappers;
-  if (!moduleInstance) moduleInstance = await createFrodoKEMModule();
-  wrappers = {} as Record<string, any>;
-  for (const variant of variantNames) {
-    wrappers[variant] = await createFrodoKEMWrapper(variant);
+async function initFrodokem(): Promise<Record<string, any>> {
+  if (frodokemWrappers) return frodokemWrappers;
+  if (!frodokemModuleInstance) frodokemModuleInstance = await createFrodoKEMModule();
+  frodokemWrappers = {} as Record<string, any>;
+  for (const variant of frodokemVariantNames) {
+    frodokemWrappers[variant] = await createFrodoKEMWrapper(variant);
   }
-  return wrappers;
+  return frodokemWrappers;
 }
 
-function cleanup(): void {
-  moduleInstance = null;
-  wrappers = null;
+function cleanupFrodokem(): void {
+  frodokemModuleInstance = null;
+  frodokemWrappers = null;
 }
 
-module.exports = { init, cleanup };
+module.exports = { init: initFrodokem, cleanup: cleanupFrodokem };

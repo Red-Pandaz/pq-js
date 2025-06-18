@@ -1,7 +1,7 @@
 const createDilithiumModule = require('../dist/dilithium_wrapper.js');
 
-let moduleInstance: any = null;
-let wrappers: Record<string, any> | null = null;
+let dilithiumModuleInstance: any = null;
+let dilithiumWrappers: Record<string, any> | null = null;
 
 async function createDilithiumWrapper(algNum: number): Promise<any> {
   const Module: any = await createDilithiumModule();
@@ -157,21 +157,21 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
   };
 }
 
-async function init(): Promise<Record<string, any>> {
-  if (wrappers) {
-    return wrappers;
+async function initDilithium(): Promise<Record<string, any>> {
+  if (dilithiumWrappers) {
+    return dilithiumWrappers;
   }
 
-  if (!moduleInstance) {
-    moduleInstance = await createDilithiumModule();
+  if (!dilithiumModuleInstance) {
+    dilithiumModuleInstance = await createDilithiumModule();
 
     // Verify that the module is properly initialized
-    if (!moduleInstance || typeof moduleInstance._init_dilithium_variants !== 'function') {
-      console.error('[Debug] Module instance:', moduleInstance);
+    if (!dilithiumModuleInstance || typeof dilithiumModuleInstance._init_dilithium_variants !== 'function') {
+      console.error('[Debug] Module instance:', dilithiumModuleInstance);
       throw new Error('WASM module not properly initialized - missing required functions');
     }
-    if (!moduleInstance.HEAPU8 || typeof moduleInstance._malloc !== 'function') {
-      console.error('[Debug] WASM memory or malloc not initialized:', moduleInstance);
+    if (!dilithiumModuleInstance.HEAPU8 || typeof dilithiumModuleInstance._malloc !== 'function') {
+      console.error('[Debug] WASM memory or malloc not initialized:', dilithiumModuleInstance);
       throw new Error('WASM memory or malloc not properly initialized');
     }
   }
@@ -181,8 +181,8 @@ async function init(): Promise<Record<string, any>> {
     const dilithium3 = await createDilithiumWrapper(3);
     const dilithium5 = await createDilithiumWrapper(5);
 
-    wrappers = { dilithium2, dilithium3, dilithium5 };
-    return wrappers;
+    dilithiumWrappers = { dilithium2, dilithium3, dilithium5 };
+    return dilithiumWrappers;
   } catch (error) {
     console.error('[Debug] Error creating wrappers:', error);
     throw error;
@@ -190,20 +190,20 @@ async function init(): Promise<Record<string, any>> {
 }
 
 // Cleanup function to free resources
-function cleanup(): void {
-  if (moduleInstance) {
+function cleanupDilithium(): void {
+  if (dilithiumModuleInstance) {
     try {
-      if (typeof moduleInstance._free_dilithium_variants === 'function') {
-        moduleInstance._free_dilithium_variants();
+      if (typeof dilithiumModuleInstance._free_dilithium_variants === 'function') {
+        dilithiumModuleInstance._free_dilithium_variants();
       } else {
         console.warn('[Debug] _free_dilithium_variants not found in module');
       }
-    } catch (e) {
-      console.warn('[Debug] Error during cleanup:', e);
+    } catch (error) {
+      console.error('[Debug] Error during cleanup:', error);
     }
-    moduleInstance = null;
-    wrappers = null;
   }
+  dilithiumModuleInstance = null;
+  dilithiumWrappers = null;
 }
 
-export { init, cleanup };
+module.exports = { init: initDilithium, cleanup: cleanupDilithium };

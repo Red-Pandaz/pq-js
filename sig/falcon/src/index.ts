@@ -1,9 +1,9 @@
 const createFalconModule = require('../dist/falcon_wrapper.js');
 
-let moduleInstance: any = null;
-let wrappers: Record<string, any> | null = null;
+let falconModuleInstance: any = null;
+let falconWrappers: Record<string, any> | null = null;
 
-const variantNames: string[] = [
+const falconVariantNames: string[] = [
   'falcon_512',
   'falcon_1024'
 ];
@@ -132,20 +132,20 @@ async function createFalconWrapper(variant: string): Promise<any> {
   };
 }
 
-async function init(): Promise<Record<string, any>> {
-  if (wrappers) return wrappers;
-  if (!moduleInstance) moduleInstance = await createFalconModule();
+async function initFalcon(): Promise<Record<string, any>> {
+  if (falconWrappers) return falconWrappers;
+  if (!falconModuleInstance) falconModuleInstance = await createFalconModule();
 
-  wrappers = {} as Record<string, any>;
-  for (const variant of variantNames) {
-    wrappers[variant] = await createFalconWrapper(variant);
+  falconWrappers = {} as Record<string, any>;
+  for (const variant of falconVariantNames) {
+    falconWrappers[variant] = await createFalconWrapper(variant);
   }
-  return wrappers;
+  return falconWrappers;
 }
 
-function cleanup(): void {
-  moduleInstance = null;
-  wrappers = null;
+function cleanupFalcon(): void {
+  falconModuleInstance = null;
+  falconWrappers = null;
 }
 
-module.exports = { init, cleanup };
+module.exports = { init: initFalcon, cleanup: cleanupFalcon };

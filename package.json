@@ -10,11 +10,18 @@
     "pq-js": "dist/cli.js"
   },
   "scripts": {
-    "test": "node test.js",
-    "build": "tsc",
+    "test": "ts-node test/test_cli.ts && ts-node test/test_kems.ts && ts-node test/test_signatures.ts",
+    "test:cli": "ts-node test/test_cli.ts",
+    "test:kems": "ts-node test/test_kems.ts",
+    "test:signatures": "ts-node test/test_signatures.ts",
+    "build": "tsc && npm run copy-wrappers",
+    "copy-wrappers": "copyfiles -u 1 \"sig/*/dist/**/*\" dist/ && copyfiles -u 1 \"kem/*/dist/**/*\" dist/",
     "cli": "node dist/cli.js"
   },
   "devDependencies": {
+    "@types/node": "^24.0.3",
+    "copyfiles": "^2.4.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
 }

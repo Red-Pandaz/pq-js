@@ -1,10 +1,10 @@
 const createSphincsModule = require('../dist/sphincs_wrapper.js');
 
-let moduleInstance: any = null;
-let wrappers: Record<string, any> | null = null;
+let sphincsModuleInstance: any = null;
+let sphincsWrappers: Record<string, any> | null = null;
 
 // List all variant names as used in your C wrapper
-const variantNames: string[] = [
+const sphincsVariantNames: string[] = [
   'sphincs_sha2_128f_simple',
   'sphincs_sha2_128s_simple',
   'sphincs_sha2_192f_simple',
@@ -143,23 +143,23 @@ async function createSphincsWrapper(variant: string): Promise<any> {
   };
 }
 
-async function init(): Promise<Record<string, any>> {
-  if (wrappers) return wrappers;
-  if (!moduleInstance) moduleInstance = await createSphincsModule();
+async function initSphincs(): Promise<Record<string, any>> {
+  if (sphincsWrappers) return sphincsWrappers;
+  if (!sphincsModuleInstance) sphincsModuleInstance = await createSphincsModule();
 
   // Optionally, check moduleInstance for required functions here
 
-  wrappers = {} as Record<string, any>;
-  for (const variant of variantNames) {
-    wrappers[variant] = await createSphincsWrapper(variant);
+  sphincsWrappers = {} as Record<string, any>;
+  for (const variant of sphincsVariantNames) {
+    sphincsWrappers[variant] = await createSphincsWrapper(variant);
   }
-  return wrappers;
+  return sphincsWrappers;
 }
 
-function cleanup(): void {
+function cleanupSphincs(): void {
   // Optionally, call free functions for each variant
-  moduleInstance = null;
-  wrappers = null;
+  sphincsModuleInstance = null;
+  sphincsWrappers = null;
 }
 
-module.exports = { init, cleanup };
+module.exports = { init: initSphincs, cleanup: cleanupSphincs };

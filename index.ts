@@ -1,8 +1,8 @@
 const { init: initDilithium, cleanup: cleanupDilithium } = require('./sig/dilithium/src');
 const { init: initSphincs, cleanup: cleanupSphincs } = require('./sig/sphincs/src');
 const { init: initFalcon, cleanup: cleanupFalcon } = require('./sig/falcon/src');
-const { init: initMLKEM, cleanup: cleanupMLKEM } = require('./kem/mlkem/src');
-const { init: initFrodoKEM, cleanup: cleanupFrodoKEM } = require('./kem/frodokem/src');
+const { init: initMlkem, cleanup: cleanupMlkem } = require('./kem/mlkem/src');
+const { init: initFrodokem, cleanup: cleanupFrodokem } = require('./kem/frodokem/src');
 const { 
   initSmall: initMcElieceSmall, 
   initFull: initMcElieceFull, 
@@ -33,8 +33,8 @@ export async function createPQ(): Promise<PQFull> {
   const dilithium = await initDilithium();
   const sphincs = await initSphincs();
   const falcon = await initFalcon();
-  const mlkem = await initMLKEM();
-  const frodokem = await initFrodoKEM();
+  const mlkem = await initMlkem();
+  const frodokem = await initFrodokem();
   const mceliece = await initMcElieceSmall();
   
   return {
@@ -47,8 +47,8 @@ export function cleanupPQ(): void {
   cleanupDilithium();
   cleanupSphincs();
   cleanupFalcon();
-  cleanupMLKEM();
-  cleanupFrodoKEM();
+  cleanupMlkem();
+  cleanupFrodokem();
   cleanupMcElieceSmall();
 }
 
@@ -57,8 +57,8 @@ export async function createPQFull(): Promise<PQFull> {
   const dilithium = await initDilithium();
   const sphincs = await initSphincs();
   const falcon = await initFalcon();
-  const mlkem = await initMLKEM();
-  const frodokem = await initFrodoKEM();
+  const mlkem = await initMlkem();
+  const frodokem = await initFrodokem();
   const mceliece = await initMcElieceFull();
   
   return {
@@ -71,8 +71,8 @@ export function cleanupPQFull(): void {
   cleanupDilithium();
   cleanupSphincs();
   cleanupFalcon();
-  cleanupMLKEM();
-  cleanupFrodoKEM();
+  cleanupMlkem();
+  cleanupFrodokem();
   cleanupMcElieceFull();
 }
 
@@ -86,16 +86,16 @@ export async function createSignatures(): Promise<PQSignatures> {
 }
 
 export async function createKEM(): Promise<PQKeyEncapsulation> {
-  const mlkem = await initMLKEM();
-  const frodokem = await initFrodoKEM();
+  const mlkem = await initMlkem();
+  const frodokem = await initFrodokem();
   const mceliece = await initMcElieceSmall();
   
   return { mlkem, frodokem, mceliece };
 }
 
 export async function createKEMFull(): Promise<PQKeyEncapsulation> {
-  const mlkem = await initMLKEM();
-  const frodokem = await initFrodoKEM();
+  const mlkem = await initMlkem();
+  const frodokem = await initFrodokem();
   const mceliece = await initMcElieceFull();
   
   return { mlkem, frodokem, mceliece };
@@ -109,14 +109,14 @@ export function cleanupSignatures(): void {
 }
 
 export function cleanupKEM(): void {
-  cleanupMLKEM();
-  cleanupFrodoKEM();
+  cleanupMlkem();
+  cleanupFrodokem();
   cleanupMcElieceSmall();
 }
 
 export function cleanupKEMFull(): void {
-  cleanupMLKEM();
-  cleanupFrodoKEM();
+  cleanupMlkem();
+  cleanupFrodokem();
   cleanupMcElieceFull();
 }
 
@@ -125,15 +125,15 @@ export {
   initDilithium,
   initSphincs,
   initFalcon,
-  initMLKEM,
-  initFrodoKEM,
+  initMlkem,
+  initFrodokem,
   initMcElieceSmall,
   initMcElieceFull,
   cleanupDilithium,
   cleanupSphincs,
   cleanupFalcon,
-  cleanupMLKEM,
-  cleanupFrodoKEM,
+  cleanupMlkem,
+  cleanupFrodokem,
   cleanupMcElieceSmall,
   cleanupMcElieceFull
 };

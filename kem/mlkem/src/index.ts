@@ -1,13 +1,13 @@
 const createMLKEMModule = require('../dist/mlkem_wrapper.js');
 
-const variantNames: string[] = [
+const mlkemVariantNames: string[] = [
   'mlkem_512',
   'mlkem_768',
   'mlkem_1024'
 ];
 
-let moduleInstance: any = null;
-let wrappers: Record<string, any> | null = null;
+let mlkemModuleInstance: any = null;
+let mlkemWrappers: Record<string, any> | null = null;
 
 async function createMLKEMWrapper(variant: string): Promise<any> {
   const Module: any = await createMLKEMModule();
@@ -86,19 +86,19 @@ async function createMLKEMWrapper(variant: string): Promise<any> {
   };
 }
 
-async function init(): Promise<Record<string, any>> {
-  if (wrappers) return wrappers;
-  if (!moduleInstance) moduleInstance = await createMLKEMModule();
-  wrappers = {} as Record<string, any>;
-  for (const variant of variantNames) {
-    wrappers[variant] = await createMLKEMWrapper(variant);
+async function initMlkem(): Promise<Record<string, any>> {
+  if (mlkemWrappers) return mlkemWrappers;
+  if (!mlkemModuleInstance) mlkemModuleInstance = await createMLKEMModule();
+  mlkemWrappers = {} as Record<string, any>;
+  for (const variant of mlkemVariantNames) {
+    mlkemWrappers[variant] = await createMLKEMWrapper(variant);
   }
-  return wrappers;
+  return mlkemWrappers;
 }
 
-function cleanup(): void {
-  moduleInstance = null;
-  wrappers = null;
+function cleanupMlkem(): void {
+  mlkemModuleInstance = null;
+  mlkemWrappers = null;
 }
 
-module.exports = { init, cleanup };
+module.exports = { init: initMlkem, cleanup: cleanupMlkem };
