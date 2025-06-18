@@ -1,5 +1,5 @@
 {
-  "name": "@red-pandaz/pq-js",
+  "name": "@red-pandas/pq-js",
   "version": "1.0.0",
   "description": "⚠️ AI-generated, unaudited post-quantum cryptography library built on liboqs 0.13.0. Use at your own risk. See README for details.",
   "license": "MIT",
