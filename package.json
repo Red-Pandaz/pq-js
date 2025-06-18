@@ -1,14 +1,20 @@
 {
-  "name": "pq",
+  "name": "pq-js",
   "version": "1.0.0",
-  "description": "Post-Quantum Cryptography Library with CLI",
-  "license": "ISC",
-  "author": "David Alexander",
+  "description": "⚠️ AI-generated, unaudited post-quantum cryptography library built on liboqs 0.13.0. Use at your own risk. See README for details.",
+  "license": "MIT",
+  "author": "David Alexander Millstone",
   "type": "commonjs",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "pq-js": "dist/cli.js"
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "ts-node test/test_cli.ts && ts-node test/test_kems.ts && ts-node test/test_signatures.ts",
     "test:cli": "ts-node test/test_cli.ts",
@@ -16,7 +22,8 @@
     "test:signatures": "ts-node test/test_signatures.ts",
     "build": "tsc && npm run copy-wrappers",
     "copy-wrappers": "copyfiles -u 1 \"sig/*/dist/**/*\" dist/ && copyfiles -u 1 \"kem/*/dist/**/*\" dist/",
-    "cli": "node dist/cli.js"
+    "cli": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",
