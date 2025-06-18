@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PQ-JS Browser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>PQ-JS Browser Test</h1>
+    
+    <div class="test-section">
+        <h2>Load Library</h2>
+        <button onclick="loadLibrary()">Load PQ-JS Library</button>
+        <div id="load-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>ML-KEM-512 Test</h2>
+        <button onclick="testMLKEM()">Generate ML-KEM-512 Keypair</button>
+        <div id="mlkem-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Dilithium2 Test</h2>
+        <button onclick="testDilithium()">Generate Dilithium2 Keypair</button>
+        <div id="dilithium-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Encryption Test</h2>
+        <button onclick="testEncryption()">Test ML-KEM Encryption</button>
+        <div id="encryption-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Signature Test</h2>
+        <button onclick="testSignature()">Test Dilithium2 Signature</button>
+        <div id="signature-result"></div>
+    </div>
+
+    <script>
+        let pq = null;
+
+        async function loadLibrary() {
+            const statusDiv = document.getElementById('load-status');
+            statusDiv.innerHTML = '<span class="info">Loading PQ-JS library...</span>';
+            
+            try {
+                // Try to load from local build first
+                const { createPQ } = await import('./dist/index.browser.js');
+                pq = await createPQ();
+                statusDiv.innerHTML = '<span class="success">✅ PQ-JS library loaded successfully!</span>';
+                console.log('PQ library loaded:', pq);
+            } catch (error) {
+                statusDiv.innerHTML = `<span class="error">❌ Failed to load library: ${error.message}</span>`;
+                console.error('Load error:', error);
+            }
+        }
+
+        async function testMLKEM() {
+            if (!pq) {
+                alert('Please load the library first!');
+                return;
+            }
+
+            const resultDiv = document.getElementById('mlkem-result');
+            resultDiv.innerHTML = '<span class="info">Generating ML-KEM-512 keypair...</span>';
+
+            try {
+                const mlkem = pq.kem.mlkem.mlkem_512;
+                const keypair = mlkem.generateKeypair();
+                
+                resultDiv.innerHTML = `
+                    <span class="success">✅ ML-KEM-512 keypair generated!</span>
+                    <pre>Public Key (first 50 bytes): ${keypair.publicKey.toString('hex').substring(0, 100)}...</pre>
+                    <pre>Secret Key (first 50 bytes): ${keypair.secretKey.toString('hex').substring(0, 100)}...</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ ML-KEM error: ${error.message}</span>`;
+                console.error('ML-KEM error:', error);
+            }
+        }
+
+        async function testDilithium() {
+            if (!pq) {
+                alert('Please load the library first!');
+                return;
+            }
+
+            const resultDiv = document.getElementById('dilithium-result');
+            resultDiv.innerHTML = '<span class="info">Generating Dilithium2 keypair...</span>';
+
+            try {
+                const dilithium = pq.signatures.dilithium.dilithium2;
+                const keypair = dilithium.generateKeypair();
+                
+                resultDiv.innerHTML = `
+                    <span class="success">✅ Dilithium2 keypair generated!</span>
+                    <pre>Public Key (first 50 bytes): ${keypair.publicKey.toString('hex').substring(0, 100)}...</pre>
+                    <pre>Secret Key (first 50 bytes): ${keypair.secretKey.toString('hex').substring(0, 100)}...</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Dilithium error: ${error.message}</span>`;
+                console.error('Dilithium error:', error);
+            }
+        }
+
+        async function testEncryption() {
+            if (!pq) {
+                alert('Please load the library first!');
+                return;
+            }
+
+            const resultDiv = document.getElementById('encryption-result');
+            resultDiv.innerHTML = '<span class="info">Testing ML-KEM encryption...</span>';
+
+            try {
+                const mlkem = pq.kem.mlkem.mlkem_512;
+                const keypair = mlkem.generateKeypair();
+                const { ciphertext, sharedSecret } = mlkem.encapsulate(keypair.publicKey);
+                const recoveredSecret = mlkem.decapsulate(ciphertext, keypair.secretKey);
+                
+                const success = sharedSecret.toString('hex') === recoveredSecret.toString('hex');
+                
+                resultDiv.innerHTML = `
+                    <span class="${success ? 'success' : 'error'}">${success ? '✅' : '❌'} ML-KEM encryption test ${success ? 'passed' : 'failed'}!</span>
+                    <pre>Shared Secret: ${sharedSecret.toString('hex').substring(0, 50)}...</pre>
+                    <pre>Ciphertext (first 50 bytes): ${ciphertext.toString('hex').substring(0, 100)}...</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Encryption error: ${error.message}</span>`;
+                console.error('Encryption error:', error);
+            }
+        }
+
+        async function testSignature() {
+            if (!pq) {
+                alert('Please load the library first!');
+                return;
+            }
+
+            const resultDiv = document.getElementById('signature-result');
+            resultDiv.innerHTML = '<span class="info">Testing Dilithium2 signature...</span>';
+
+            try {
+                const dilithium = pq.signatures.dilithium.dilithium2;
+                const keypair = dilithium.generateKeypair();
+                const message = "Hello, Post-Quantum World!";
+                const signature = dilithium.sign(message, keypair.secretKey);
+                const isValid = dilithium.verify(message, signature, keypair.publicKey);
+                
+                resultDiv.innerHTML = `
+                    <span class="${isValid ? 'success' : 'error'}">${isValid ? '✅' : '❌'} Dilithium2 signature test ${isValid ? 'passed' : 'failed'}!</span>
+                    <pre>Message: "${message}"</pre>
+                    <pre>Signature (first 50 bytes): ${signature.toString('hex').substring(0, 100)}...</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Signature error: ${error.message}</span>`;
+                console.error('Signature error:', error);
+            }
+        }
+    </script>
+</body>
+</html> 
