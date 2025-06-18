@@ -1,19 +1,22 @@
-const createMLKEMModule = require('../dist/mlkem_wrapper.js');
+const createFrodoKEMModule = require('../dist/frodokem_wrapper.js');
 
 const variantNames: string[] = [
-  'mlkem_512',
-  'mlkem_768',
-  'mlkem_1024'
+  'frodokem_640_aes',
+  'frodokem_640_shake',
+  'frodokem_976_aes',
+  'frodokem_976_shake',
+  'frodokem_1344_aes',
+  'frodokem_1344_shake'
 ];
 
 let moduleInstance: any = null;
 let wrappers: Record<string, any> | null = null;
 
-async function createMLKEMWrapper(variant: string): Promise<any> {
-  const Module: any = await createMLKEMModule();
+async function createFrodoKEMWrapper(variant: string): Promise<any> {
+  const Module: any = await createFrodoKEMModule();
 
   const initResult: number = Module[`_init_${variant}`]();
-  if (initResult !== 1) throw new Error(`Failed to initialize ML-KEM variant: ${variant}`);
+  if (initResult !== 1) throw new Error(`Failed to initialize FrodoKEM variant: ${variant}`);
 
   const pubLen: number = Module[`_${variant}_get_public_key_length`]();
   const secLen: number = Module[`_${variant}_get_secret_key_length`]();
@@ -88,10 +91,10 @@ async function createMLKEMWrapper(variant: string): Promise<any> {
 
 async function init(): Promise<Record<string, any>> {
   if (wrappers) return wrappers;
-  if (!moduleInstance) moduleInstance = await createMLKEMModule();
+  if (!moduleInstance) moduleInstance = await createFrodoKEMModule();
   wrappers = {} as Record<string, any>;
   for (const variant of variantNames) {
-    wrappers[variant] = await createMLKEMWrapper(variant);
+    wrappers[variant] = await createFrodoKEMWrapper(variant);
   }
   return wrappers;
 }

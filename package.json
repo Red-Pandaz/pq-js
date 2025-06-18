@@ -1,14 +1,18 @@
 {
   "name": "pq",
   "version": "1.0.0",
-  "description": "",
+  "description": "Post-Quantum Cryptography Library with CLI",
   "license": "ISC",
   "author": "David Alexander",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "bin": {
+    "pq-js": "dist/cli.js"
+  },
   "scripts": {
     "test": "node test.js",
-    "build": "tsc"
+    "build": "tsc",
+    "cli": "node dist/cli.js"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

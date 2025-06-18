@@ -1,6 +1,7 @@
-const { createPQ } = require('../index.js'); // root-level index.js
+const pqSig = require('../index');
+const { createPQ: createPQSig } = pqSig;
 
-const sphincsVariants = [
+const sphincsVariants: string[] = [
   'sphincs_sha2_128f_simple',
   'sphincs_sha2_128s_simple',
   'sphincs_sha2_192f_simple',
@@ -15,18 +16,18 @@ const sphincsVariants = [
   'sphincs_shake_256s_simple'
 ];
 
-const dilithiumVariants = [
+const dilithiumVariants: string[] = [
   'dilithium2',
   'dilithium3',
   'dilithium5'
 ];
 
-const falconVariants = [
+const falconVariants: string[] = [
   'falcon_512',
   'falcon_1024'
 ];
 
-async function testVariant(name, wrapper) {
+async function testVariant(name: string, wrapper: any): Promise<boolean> {
   console.log(`\n--- Testing ${name} ---`);
   try {
     console.log(`Public key length: ${wrapper.getPublicKeyLength()}`);
@@ -44,22 +45,22 @@ async function testVariant(name, wrapper) {
     console.log("Verified:", verified);
 
     return verified;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error in ${name}:`, error);
-    if (error.stack) {
+    if (error instanceof Error && error.stack) {
       console.error(error.stack);
     }
     return false;
   }
 }
 
-function randomBytes(length) {
+function randomBytesSig(length: number): Uint8Array {
   const arr = new Uint8Array(length);
   for (let i = 0; i < length; i++) arr[i] = Math.floor(Math.random() * 256);
   return arr;
 }
 
-async function fuzzTestVariant(name, wrapper) {
+async function fuzzTestVariant(name: string, wrapper: any): Promise<boolean> {
   console.log(`\n--- Fuzz Testing ${name} ---`);
   try {
     // Generate valid keypair
@@ -67,7 +68,7 @@ async function fuzzTestVariant(name, wrapper) {
 
     // Try signing random messages of various lengths
     for (let len of [0, 1, 32, 128, 1024, 4096]) {
-      const msg = randomBytes(len);
+      const msg = randomBytesSig(len);
       const sig = wrapper.sign(msg, secretKey);
       const verified = wrapper.verify(msg, sig, publicKey);
       if (!verified) {
@@ -77,7 +78,7 @@ async function fuzzTestVariant(name, wrapper) {
     }
 
     // Try verifying with corrupted signature
-    const msg = randomBytes(32);
+    const msg = randomBytesSig(32);
     const sig = wrapper.sign(msg, secretKey);
     sig[0] ^= 0xff; // Corrupt the signature
     const verified = wrapper.verify(msg, sig, publicKey);
@@ -96,19 +97,20 @@ async function fuzzTestVariant(name, wrapper) {
 
     console.log('Fuzz test passed');
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Fuzz error in ${name}:`, error);
     return false;
   }
 }
 
-async function runTests() {
+async function runTests(): Promise<void> {
   try {
     console.log('Initializing all PQC variants...');
-    const { dilithium, sphincs, falcon } = await createPQ();
+    const { signatures } = await createPQSig();
+    const { dilithium, sphincs, falcon } = signatures;
     console.log('Initialization complete, starting tests...');
 
-    const results = {};
+    const results: Record<string, boolean> = {};
 
     // Test Dilithium
     for (const variant of dilithiumVariants) {
@@ -131,7 +133,7 @@ async function runTests() {
     }
     console.log('\nStarting Fuzz Tests...');
 
-    const fuzzResults = {};
+    const fuzzResults: Record<string, boolean> = {};
 
   // Fuzz Dilithium
   for (const variant of dilithiumVariants) {
@@ -153,17 +155,17 @@ async function runTests() {
     console.log(`${variant}:`, fuzzResults[variant] ? 'PASS' : 'FAIL');
   }
   
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Fatal error:', error);
-    if (error.stack) {
+    if (error instanceof Error && error.stack) {
       console.error(error.stack);
     }
   }
 }
 
-runTests().catch(error => {
+runTests().catch((error: unknown) => {
   console.error('Unhandled error:', error);
-  if (error.stack) {
+  if (error instanceof Error && error.stack) {
     console.error(error.stack);
   }
   process.exit(1);

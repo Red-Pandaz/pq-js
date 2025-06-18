@@ -1,14 +1,14 @@
 const createMcElieceFull = require('../dist/classic_mceliece_wrapper.js');
 const createMcElieceSmall = require('../dist/classic_mceliece_wrapper_small.js');
 
-const smallVariantNames = [
+const smallVariantNames: string[] = [
   'classic_mceliece_348864',
   'classic_mceliece_348864f',
   'classic_mceliece_460896',
   'classic_mceliece_460896f'
 ];
 
-const fullVariantNames = [
+const fullVariantNames: string[] = [
   ...smallVariantNames,
   'classic_mceliece_6688128',
   'classic_mceliece_6688128f',
@@ -18,33 +18,35 @@ const fullVariantNames = [
   'classic_mceliece_8192128f'
 ];
 
-let smallModuleInstance = null;
-let smallWrappers = null;
-let fullModuleInstance = null;
-let fullWrappers = null;
+let smallModuleInstance: any = null;
+let smallWrappers: Record<string, any> | null = null;
+let fullModuleInstance: any = null;
+let fullWrappers: Record<string, any> | null = null;
 
-async function createMcElieceWrapper(variant, createModule) {
-  const Module = await createModule();
-  const initResult = Module[`_init_${variant}`]();
+async function createMcElieceWrapper(variant: string, createModule: () => Promise<any>): Promise<any> {
+  const Module: any = await createModule();
+  const initResult: number = Module[`_init_${variant}`]();
   if (initResult !== 1) throw new Error(`Failed to initialize McEliece variant: ${variant}`);
-  const pubLen = Module[`_${variant}_get_public_key_length`]();
-  const secLen = Module[`_${variant}_get_secret_key_length`]();
-  const ctLen = Module[`_${variant}_get_ciphertext_length`]();
-  const ssLen = Module[`_${variant}_get_shared_secret_length`]();
-  function copyMemory(ptr, length) {
+  const pubLen: number = Module[`_${variant}_get_public_key_length`]();
+  const secLen: number = Module[`_${variant}_get_secret_key_length`]();
+  const ctLen: number = Module[`_${variant}_get_ciphertext_length`]();
+  const ssLen: number = Module[`_${variant}_get_shared_secret_length`]();
+  
+  function copyMemory(ptr: number, length: number): Uint8Array | null {
     if (!ptr || !length) return null;
     return new Uint8Array(Module.HEAPU8.slice(ptr, ptr + length));
   }
-  function writeMemory(data, ptr) {
+  function writeMemory(data: Uint8Array, ptr: number) {
     if (!ptr || !data) return;
     Module.HEAPU8.set(data, ptr);
   }
+  
   return {
-    generateKeypair() {
-      const pkPtr = Module._malloc(pubLen);
-      const skPtr = Module._malloc(secLen);
+    generateKeypair(): { publicKey: Uint8Array | null, secretKey: Uint8Array | null } {
+      const pkPtr: number = Module._malloc(pubLen);
+      const skPtr: number = Module._malloc(secLen);
       try {
-        const result = Module[`_${variant}_keypair`](pkPtr, skPtr);
+        const result: number = Module[`_${variant}_keypair`](pkPtr, skPtr);
         if (result !== 0) throw new Error('Keypair generation failed');
         return {
           publicKey: copyMemory(pkPtr, pubLen),
@@ -55,13 +57,13 @@ async function createMcElieceWrapper(variant, createModule) {
         Module._free(skPtr);
       }
     },
-    encapsulate(publicKey) {
-      const pkPtr = Module._malloc(pubLen);
+    encapsulate(publicKey: Uint8Array): { ciphertext: Uint8Array | null, sharedSecret: Uint8Array | null } {
+      const pkPtr: number = Module._malloc(pubLen);
       writeMemory(publicKey, pkPtr);
-      const ctPtr = Module._malloc(ctLen);
-      const ssPtr = Module._malloc(ssLen);
+      const ctPtr: number = Module._malloc(ctLen);
+      const ssPtr: number = Module._malloc(ssLen);
       try {
-        const result = Module[`_${variant}_encaps`](ctPtr, ssPtr, pkPtr);
+        const result: number = Module[`_${variant}_encaps`](ctPtr, ssPtr, pkPtr);
         if (result !== 0) throw new Error('Encapsulation failed');
         return {
           ciphertext: copyMemory(ctPtr, ctLen),
@@ -73,14 +75,14 @@ async function createMcElieceWrapper(variant, createModule) {
         Module._free(ssPtr);
       }
     },
-    decapsulate(ciphertext, secretKey) {
-      const ctPtr = Module._malloc(ctLen);
+    decapsulate(ciphertext: Uint8Array, secretKey: Uint8Array): Uint8Array | null {
+      const ctPtr: number = Module._malloc(ctLen);
       writeMemory(ciphertext, ctPtr);
-      const skPtr = Module._malloc(secLen);
+      const skPtr: number = Module._malloc(secLen);
       writeMemory(secretKey, skPtr);
-      const ssPtr = Module._malloc(ssLen);
+      const ssPtr: number = Module._malloc(ssLen);
       try {
-        const result = Module[`_${variant}_decaps`](ssPtr, ctPtr, skPtr);
+        const result: number = Module[`_${variant}_decaps`](ssPtr, ctPtr, skPtr);
         if (result !== 0) throw new Error('Decapsulation failed');
         return copyMemory(ssPtr, ssLen);
       } finally {
@@ -89,39 +91,39 @@ async function createMcElieceWrapper(variant, createModule) {
         Module._free(ssPtr);
       }
     },
-    getPublicKeyLength: () => pubLen,
-    getSecretKeyLength: () => secLen,
-    getCiphertextLength: () => ctLen,
-    getSharedSecretLength: () => ssLen
+    getPublicKeyLength: (): number => pubLen,
+    getSecretKeyLength: (): number => secLen,
+    getCiphertextLength: (): number => ctLen,
+    getSharedSecretLength: (): number => ssLen
   };
 }
 
-async function initSmall() {
+async function initSmall(): Promise<Record<string, any>> {
   if (smallWrappers) return smallWrappers;
   if (!smallModuleInstance) smallModuleInstance = await createMcElieceSmall();
-  smallWrappers = {};
+  smallWrappers = {} as Record<string, any>;
   for (const variant of smallVariantNames) {
     smallWrappers[variant] = await createMcElieceWrapper(variant, createMcElieceSmall);
   }
   return smallWrappers;
 }
 
-async function initFull() {
+async function initFull(): Promise<Record<string, any>> {
   if (fullWrappers) return fullWrappers;
   if (!fullModuleInstance) fullModuleInstance = await createMcElieceFull();
-  fullWrappers = {};
+  fullWrappers = {} as Record<string, any>;
   for (const variant of fullVariantNames) {
     fullWrappers[variant] = await createMcElieceWrapper(variant, createMcElieceFull);
   }
   return fullWrappers;
 }
 
-function cleanupSmall() {
+function cleanupSmall(): void {
   smallModuleInstance = null;
   smallWrappers = null;
 }
 
-function cleanupFull() {
+function cleanupFull(): void {
   fullModuleInstance = null;
   fullWrappers = null;
 }

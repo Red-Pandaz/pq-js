@@ -1,15 +1,16 @@
-const { createPQ, createPQFull } = require('../index.js'); // Adjust path if needed
+const pq = require('../index');
+const { createPQ: createPQKEM, createPQFull: createPQFullKEM } = pq;
 
 // Set this flag to true to test the full build (all McEliece variants, 2GB RAM)
-const TEST_FULL_MCELIECE = false; // Change to true to test full build
+const TEST_FULL_MCELIECE: boolean = true; // Change to true to test full build
 
-const mlkemVariants = [
+const mlkemVariants: string[] = [
   'mlkem_512',
   'mlkem_768',
   'mlkem_1024'
 ];
 
-const frodoKEMVariants = [
+const frodoKEMVariants: string[] = [
   'frodokem_640_aes',
   'frodokem_640_shake',
   'frodokem_976_aes',
@@ -18,14 +19,14 @@ const frodoKEMVariants = [
   'frodokem_1344_shake'
 ];
 
-const mcelieceSmallVariants = [
+const mcelieceSmallVariants: string[] = [
   'classic_mceliece_348864',
   'classic_mceliece_348864f',
   'classic_mceliece_460896',
   'classic_mceliece_460896f'
 ];
 
-const mcelieceFullVariants = [
+const mcelieceFullVariants: string[] = [
   ...mcelieceSmallVariants,
   'classic_mceliece_6688128',
   'classic_mceliece_6688128f',
@@ -35,15 +36,15 @@ const mcelieceFullVariants = [
   'classic_mceliece_8192128f'
 ];
 
-const mcelieceVariants = TEST_FULL_MCELIECE ? mcelieceFullVariants : mcelieceSmallVariants;
+const mcelieceVariants: string[] = TEST_FULL_MCELIECE ? mcelieceFullVariants : mcelieceSmallVariants;
 
-function randomBytes(length) {
+function randomBytesKEM(length: number): Uint8Array {
   const arr = new Uint8Array(length);
   for (let i = 0; i < length; i++) arr[i] = Math.floor(Math.random() * 256);
   return arr;
 }
 
-async function testKEMVariant(name, wrapper) {
+async function testKEMVariant(name: string, wrapper: any): Promise<boolean> {
   console.log(`\n--- Testing KEM ${name} ---`);
   try {
     // Generate keypair
@@ -60,18 +61,18 @@ async function testKEMVariant(name, wrapper) {
     const ss2 = wrapper.decapsulate(ciphertext, secretKey);
 
     // Check shared secrets match
-    const match = ss1.length === ss2.length && ss1.every((b, i) => b === ss2[i]);
+    const match = ss1.length === ss2.length && ss1.every((b: number, i: number) => b === ss2[i]);
     console.log("Shared secret match:", match);
 
     return match;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error in KEM ${name}:`, error);
-    if (error.stack) console.error(error.stack);
+    if (error instanceof Error && error.stack) console.error(error.stack);
     return false;
   }
 }
 
-async function fuzzTestKEMVariant(name, wrapper) {
+async function fuzzTestKEMVariant(name: string, wrapper: any): Promise<boolean> {
   console.log(`\n--- Fuzz Testing KEM ${name} ---`);
   try {
     // Generate valid keypair
@@ -81,7 +82,7 @@ async function fuzzTestKEMVariant(name, wrapper) {
     for (let i = 0; i < 5; ++i) {
       const { ciphertext, sharedSecret: ss1 } = wrapper.encapsulate(publicKey);
       const ss2 = wrapper.decapsulate(ciphertext, secretKey);
-      if (ss1.length !== ss2.length || !ss1.every((b, i) => b === ss2[i])) {
+      if (ss1.length !== ss2.length || !ss1.every((b: number, i: number) => b === ss2[i])) {
         console.error('Fuzz fail: valid encaps/decaps did not match');
         return false;
       }
@@ -93,7 +94,7 @@ async function fuzzTestKEMVariant(name, wrapper) {
     corrupted[0] ^= 0xff; // Flip a bit
     const ssCorrupt = wrapper.decapsulate(corrupted, secretKey);
     // Should not match original shared secret
-    if (ssCorrupt && ssCorrupt.every((b, i) => b === ss1[i])) {
+    if (ssCorrupt && ssCorrupt.every((b: number, i: number) => b === ss1[i])) {
       console.error('Fuzz fail: corrupted ciphertext produced same shared secret!');
       return false;
     }
@@ -101,30 +102,30 @@ async function fuzzTestKEMVariant(name, wrapper) {
     // Fuzz: wrong secret key
     const { secretKey: wrongSK } = wrapper.generateKeypair();
     const ssWrong = wrapper.decapsulate(ciphertext, wrongSK);
-    if (ssWrong && ssWrong.every((b, i) => b === ss1[i])) {
+    if (ssWrong && ssWrong.every((b: number, i: number) => b === ss1[i])) {
       console.error('Fuzz fail: wrong secret key produced same shared secret!');
       return false;
     }
 
     console.log('Fuzz test passed');
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Fuzz error in KEM ${name}:`, error);
     return false;
   }
 }
 
-async function runKEMTests() {
+async function runKEMTests(): Promise<void> {
   try {
     console.log('Initializing PQC KEMs...');
     console.log(`Testing Classic McEliece ${TEST_FULL_MCELIECE ? 'FULL (all variants, 2GB RAM)' : 'SMALL (small/medium variants, 512MB RAM)'}`);
-    const { mlkem } = await createPQ();
-    const { frodokem } = await createPQ();
-    const pq = TEST_FULL_MCELIECE ? await createPQFull() : await createPQ();
-    const mceliece = pq.mceliece;
+    const { kem } = await createPQKEM();
+    const { mlkem, frodokem } = kem;
+    const pq = TEST_FULL_MCELIECE ? await createPQFullKEM() : await createPQKEM();
+    const mceliece = pq.kem.mceliece;
     console.log('Initialization complete, starting KEM tests...');
 
-    const results = {};
+    const results: Record<string, boolean> = {};
     for (const variant of mlkemVariants) {
       results[variant] = await testKEMVariant(variant, mlkem[variant]);
     }
@@ -151,7 +152,7 @@ async function runKEMTests() {
     }
 
     console.log('\nStarting KEM Fuzz Tests...');
-    const fuzzResults = {};
+    const fuzzResults: Record<string, boolean> = {};
     for (const variant of mlkemVariants) {
       fuzzResults[variant] = await fuzzTestKEMVariant(variant, mlkem[variant]);
     }
@@ -176,14 +177,14 @@ async function runKEMTests() {
     for (const variant of mcelieceVariants) {
       console.log(`${variant}:`, fuzzResults[variant] ? 'PASS' : 'FAIL');
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Fatal error:', error);
-    if (error.stack) console.error(error.stack);
+    if (error instanceof Error && error.stack) console.error(error.stack);
   }
 }
 
-runKEMTests().catch(error => {
+runKEMTests().catch((error: unknown) => {
   console.error('Unhandled error:', error);
-  if (error.stack) console.error(error.stack);
+  if (error instanceof Error && error.stack) console.error(error.stack);
   process.exit(1);
 });
