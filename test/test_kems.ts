@@ -2,7 +2,7 @@ const pq = require('../index');
 const { createPQ: createPQKEM, createPQFull: createPQFullKEM } = pq;
 
 // Set this flag to true to test the full build (all McEliece variants, 2GB RAM)
-const TEST_FULL_MCELIECE: boolean = true; // Change to true to test full build
+const TEST_FULL_MCELIECE: boolean = false; // Change to true to test full build
 
 const mlkemVariants: string[] = [
   'mlkem_512',
