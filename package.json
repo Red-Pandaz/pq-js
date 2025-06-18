@@ -9,5 +9,8 @@
   "scripts": {
     "test": "node test.js",
     "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
   }
 }

@@ -1,6 +1,6 @@
-const { init: initDilithium, cleanup: cleanupDilithium } = require('./sig/dilithium/src/index.js');
-const { init: initSphincs, cleanup: cleanupSphincs } = require('./sig/sphincs/src/index.js');
-const { init: initFalcon, cleanup: cleanupFalcon } = require('./sig/falcon/src/index.js');
+const { init: initDilithium, cleanup: cleanupDilithium } = require('./dist/sig/dilithium/src');
+const { init: initSphincs, cleanup: cleanupSphincs } = require('./dist/sig/sphincs/src/index.js');
+const { init: initFalcon, cleanup: cleanupFalcon } = require('./dist/sig/falcon/src/index.js');
 const { init: initMLKEM, cleanup: cleanupMLKEM } = require('./kem/mlkem/src/index.js'); 
 const { init: initFrodoKEM, cleanup: cleanupFrodoKEM } = require('./kem/frodokem/src/index.js');
 const { initSmall: initMcElieceSmall, initFull: initMcElieceFull, cleanupSmall: cleanupMcElieceSmall, cleanupFull: cleanupMcElieceFull } = require('./kem/classic_mceliece/src/index.js');
