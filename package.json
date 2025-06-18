@@ -29,7 +29,7 @@
     "test:kems": "ts-node test/test_kems.ts",
     "test:signatures": "ts-node test/test_signatures.ts",
     "build": "tsc && npm run copy-wrappers",
-    "copy-wrappers": "copyfiles -u 1 \"sig/*/dist/**/*\" dist/ && copyfiles -u 1 \"kem/*/dist/**/*\" dist/",
+    "copy-wrappers": "mkdir -p dist/kem dist/sig && cp kem/*/dist/*.js dist/kem/ && cp kem/*/dist/*.wasm dist/kem/ && cp sig/*/dist/*.js dist/sig/ && cp sig/*/dist/*.wasm dist/sig/ && mkdir -p dist/sig/dilithium/dist dist/sig/falcon/dist dist/sig/sphincs/dist dist/kem/mlkem/dist dist/kem/frodokem/dist dist/kem/classic_mceliece/dist && cp sig/dilithium/dist/* dist/sig/dilithium/dist/ && cp sig/falcon/dist/* dist/sig/falcon/dist/ && cp sig/sphincs/dist/* dist/sig/sphincs/dist/ && cp kem/mlkem/dist/* dist/kem/mlkem/dist/ && cp kem/frodokem/dist/* dist/kem/frodokem/dist/ && cp kem/classic_mceliece/dist/* dist/kem/classic_mceliece/dist/",
     "cli": "node dist/cli.js",
     "prepublishOnly": "npm run build"
   },
