@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8"><title>Dilithium Test</title></head>
+  <body>
+    <h1>Dilithium Test</h1>
+    
+    <!-- Load the Emscripten module -->
+    <script src="./dist-browser/sig/dilithium_wrapper.js"></script>
+    
+    <script>
+      // Wait for the module to be available
+      Module({
+        locateFile: (path) => {
+          if (path.endsWith('.wasm')) {
+            return './dist-browser/sig/dilithium_wrapper.wasm';
+          }
+          return path;
+        }
+      }).then((Module) => {
+        console.log('PQ Module loaded:', Module);
+
+        // Initialize variants
+        const initResult = Module._init_dilithium_variants();
+        console.log('Init result:', initResult);
+
+        // Test keypair generation
+        const pubLen = Module._dilithium2_get_public_key_length();
+        const secLen = Module._dilithium2_get_secret_key_length();
+        
+        console.log('Public key length:', pubLen);
+        console.log('Secret key length:', secLen);
+
+        // Allocate memory
+        const pubKeyPtr = Module._malloc(pubLen);
+        const secKeyPtr = Module._malloc(secLen);
+
+        // Generate keypair
+        const result = Module._dilithium2_keypair(pubKeyPtr, secKeyPtr);
+        console.log('Keypair result:', result);
+
+        // Clean up
+        Module._free(pubKeyPtr);
+        Module._free(secKeyPtr);
+
+        console.log('Test completed successfully!');
+      }).catch((err) => {
+        console.error('Failed to load PQ module:', err);
+      });
+    </script>
+  </body>
+</html> 

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WASM Serving Test</title>
+</head>
+<body>
+    <h1>WASM Serving Test</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testWASMServing() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Test 1: Check if WASM file exists
+                console.log('Testing WASM file availability...');
+                const response = await fetch('./dist-browser/sig/dilithium_wrapper.wasm');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // Test 2: Check MIME type
+                const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                
+                if (contentType !== 'application/wasm') {
+                    throw new Error(`Wrong MIME type: ${contentType}. Expected: application/wasm`);
+                }
+                
+                // Test 3: Check file size
+                const contentLength = response.headers.get('content-length');
+                console.log('File size:', contentLength, 'bytes');
+                
+                if (parseInt(contentLength) < 1000000) { // Should be ~1MB
+                    console.warn('WASM file seems small, might be incomplete');
+                }
+                
+                results.innerHTML = `
+                    <h2 style="color: green;">✅ WASM serving correctly!</h2>
+                    <p><strong>Content-Type:</strong> ${contentType}</p>
+                    <p><strong>File size:</strong> ${contentLength} bytes</p>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                `;
+                
+            } catch (error) {
+                console.error('WASM serving test failed:', error);
+                results.innerHTML = `
+                    <h2 style="color: red;">❌ WASM serving failed!</h2>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Possible solutions:</strong></p>
+                    <ul>
+                        <li>Make sure your server supports .wasm MIME type</li>
+                        <li>Try using 'serve' instead of 'http-server'</li>
+                        <li>Check if the file path is correct</li>
+                    </ul>
+                `;
+            }
+        }
+        
+        // Run test when page loads
+        testWASMServing();
+    </script>
+</body>
+</html> 

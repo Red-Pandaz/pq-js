@@ -1,8 +1,11 @@
 // Browser-specific entry point for pq-js
-// This version handles WASM loading via fetch instead of fs.readFileSync
+// This version handles WASM loading via fetch instead of 
+// .readFileSync
 
-// Static imports for all WASM JS wrappers
-import dilithiumWrapper from './dist/sig/dilithium_wrapper.js';
+// Import browser-specific wrappers
+import { initDilithium as initDilithiumBrowser, cleanupDilithium } from './sig/dilithium/src-browser';
+
+// Static imports for other WASM JS wrappers (these will need browser versions too)
 import sphincsWrapper from './dist/sig/sphincs_wrapper.js';
 import falconWrapper from './dist/sig/falcon_wrapper.js';
 import mlkemWrapper from './dist/kem/mlkem_wrapper.js';
@@ -39,8 +42,6 @@ async function loadWasmModule(moduleName: string): Promise<any> {
   };
 
   switch (moduleName) {
-    case 'sig/dilithium_wrapper':
-      return await dilithiumWrapper(moduleArg);
     case 'sig/sphincs_wrapper':
       return await sphincsWrapper(moduleArg);
     case 'sig/falcon_wrapper':
@@ -59,17 +60,16 @@ async function loadWasmModule(moduleName: string): Promise<any> {
 // Browser-compatible initialization function
 export async function createPQ(): Promise<PQFull> {
   try {
-    // Load all WASM modules
-    const dilithiumModule = await loadWasmModule('sig/dilithium_wrapper');
+    // Initialize Dilithium using the new browser wrapper
+    const dilithium = await initDilithiumBrowser();
+    
+    // Load other WASM modules (these will need browser versions too)
     const sphincsModule = await loadWasmModule('sig/sphincs_wrapper');
     const falconModule = await loadWasmModule('sig/falcon_wrapper');
     const mlkemModule = await loadWasmModule('kem/mlkem_wrapper');
     const frodokemModule = await loadWasmModule('kem/frodokem_wrapper');
     const mcelieceModule = await loadWasmModule('kem/classic_mceliece_wrapper_small');
 
-    // Initialize Dilithium
-    const dilithium = await createDilithiumWrappers(dilithiumModule);
-    
     // Initialize other signature schemes (placeholder for now)
     const sphincs = {};
     const falcon = {};
@@ -89,173 +89,13 @@ export async function createPQ(): Promise<PQFull> {
   }
 }
 
-// Create Dilithium wrappers similar to the Node.js implementation
-async function createDilithiumWrappers(Module: any): Promise<Record<string, any>> {
-  // Initialize all variants
-  const initResult: number = Module._init_dilithium_variants();
-  
-  if (initResult !== 1) {
-    throw new Error('Failed to initialize dilithium variants');
-  }
-
-  const dilithium2 = createDilithiumWrapper(Module, 2);
-  const dilithium3 = createDilithiumWrapper(Module, 3);
-  const dilithium5 = createDilithiumWrapper(Module, 5);
-
-  return { dilithium2, dilithium3, dilithium5 };
-}
-
-function createDilithiumWrapper(Module: any, algNum: number): any {
-  // Get lengths before creating wrapper
-  const pubLen: number = Module[`_dilithium${algNum}_get_public_key_length`]();
-  const secLen: number = Module[`_dilithium${algNum}_get_secret_key_length`]();
-  const maxSigLen: number = Module[`_dilithium${algNum}_get_signature_length`]();
-
-  // Helper function to check OQS status codes
-  function checkOQSStatus(result: number, operation: string) {
-    if (result !== 0) {
-      throw new Error(`${operation} failed with OQS status code: ${result}`);
-    }
-  }
-
-  // Helper function to safely copy memory
-  function copyMemory(ptr: number, length: number): Uint8Array | null {
-    if (!ptr || !length) return null;
-    if (!Module.HEAPU8) throw new Error('WASM memory not initialized');
-    if ((ptr + length) > Module.HEAPU8.length) {
-      throw new Error(`Buffer overflow: trying to read ${length} bytes at ${ptr}, but HEAPU8 length is ${Module.HEAPU8.length}`);
-    }
-    // Make a true copy, not a view!
-    return new Uint8Array(Module.HEAPU8.slice(ptr, ptr + length));
-  }
-
-  // Helper function to safely write memory
-  function writeMemory(data: Uint8Array, ptr: number) {
-    if (!ptr || !data) return;
-    if (!Module.HEAPU8) throw new Error('HEAPU8 is undefined before write');
-    if ((ptr + data.length) > Module.HEAPU8.length) {
-      throw new Error(`Buffer overflow: trying to write ${data.length} bytes at ${ptr}, but HEAPU8 length is ${Module.HEAPU8.length}`);
-    }
-    Module.HEAPU8.set(data, ptr);
-  }
-
-  return {
-    generateKeypair(): { publicKey: Uint8Array, secretKey: Uint8Array } {
-      // Ensure memory is initialized
-      if (!Module.HEAPU8) {
-        throw new Error('WASM memory not initialized');
-      }
-      // Allocate memory
-      const pkPtr: number = Module._malloc(pubLen);
-      if (!pkPtr) throw new Error('Failed to allocate memory for public key');
-      const skPtr: number = Module._malloc(secLen);
-      if (!skPtr) throw new Error('Failed to allocate memory for secret key');
-      try {
-        if (!pkPtr || !skPtr) {
-          throw new Error('Failed to allocate memory for keypair');
-        }
-        // Call the keypair function directly from the module
-        const result: number = Module[`_dilithium${algNum}_keypair`](pkPtr, skPtr);
-        checkOQSStatus(result, 'Keypair generation');
-        // Create copies of the data before freeing the memory
-        const publicKey: Uint8Array | null = copyMemory(pkPtr, pubLen);
-        const secretKey: Uint8Array | null = copyMemory(skPtr, secLen);
-        if (!publicKey || !secretKey) {
-          throw new Error('Failed to copy keypair data');
-        }
-        return { publicKey, secretKey };
-      } finally {
-        if (pkPtr) Module._free(pkPtr);
-        if (skPtr) Module._free(skPtr);
-      }
-    },
-
-    sign(message: Uint8Array | string, secretKey: Uint8Array): Uint8Array {
-      // Ensure memory is initialized
-      if (!Module.HEAPU8) {
-        throw new Error('WASM memory not initialized');
-      }
-      const msgBytes: Uint8Array = typeof message === 'string' ? new TextEncoder().encode(message) : message;
-      if (secretKey.length !== secLen) {
-        throw new Error(`Invalid secret key length. Expected ${secLen}, got ${secretKey.length}`);
-      }
-      // Allocate memory
-      const mPtr: number = Module._malloc(msgBytes.length);
-      if (!mPtr) throw new Error('Failed to allocate message buffer');
-      writeMemory(msgBytes, mPtr);
-      const skPtr: number = Module._malloc(secretKey.length);
-      if (!skPtr) throw new Error('Failed to allocate secret key buffer');
-      writeMemory(secretKey, skPtr);
-      const sigPtr: number = Module._malloc(maxSigLen);
-      if (!sigPtr) throw new Error('Failed to allocate signature buffer');
-      const sigLenPtr: number = Module._malloc(4);
-      if (!sigLenPtr) throw new Error('Failed to allocate signature length buffer');
-      Module.HEAPU32[sigLenPtr >> 2] = maxSigLen;
-      try {
-        const result: number = Module[`_dilithium${algNum}_sign`](
-          sigPtr, 
-          sigLenPtr, 
-          mPtr, 
-          msgBytes.length, 
-          skPtr
-        );
-        checkOQSStatus(result, 'Signing');
-        const sigLen: number = Module.HEAPU32[sigLenPtr >> 2];
-        if (sigLen > maxSigLen) {
-          throw new Error(`Signature length ${sigLen} exceeds maximum ${maxSigLen}`);
-        }
-        // Create a copy of the signature data
-        const signature: Uint8Array | null = copyMemory(sigPtr, sigLen);
-        if (!signature) {
-          throw new Error('Failed to copy signature data');
-        }
-        return signature;
-      } finally {
-        Module._free(mPtr);
-        Module._free(skPtr);
-        Module._free(sigPtr);
-        Module._free(sigLenPtr);
-      }
-    },
-
-    verify(message: Uint8Array | string, signature: Uint8Array, publicKey: Uint8Array): boolean {
-      // Ensure memory is initialized
-      if (!Module.HEAPU8) {
-        throw new Error('WASM memory not initialized');
-      }
-      const msgBytes: Uint8Array = typeof message === 'string' ? new TextEncoder().encode(message) : message;
-      // Allocate memory
-      const mPtr: number = Module._malloc(msgBytes.length);
-      if (!mPtr) throw new Error('Failed to allocate message buffer');
-      writeMemory(msgBytes, mPtr);
-      const sigPtr: number = Module._malloc(signature.length);
-      if (!sigPtr) throw new Error('Failed to allocate signature buffer');
-      writeMemory(signature, sigPtr);
-      const pkPtr: number = Module._malloc(publicKey.length);
-      if (!pkPtr) throw new Error('Failed to allocate public key buffer');
-      writeMemory(publicKey, pkPtr);
-      try {
-        const result: number = Module[`_dilithium${algNum}_verify`](mPtr, msgBytes.length, sigPtr, signature.length, pkPtr);
-        return result === 0;
-      } finally {
-        Module._free(mPtr);
-        Module._free(sigPtr);
-        Module._free(pkPtr);
-      }
-    },
-
-    getPublicKeyLength: (): number => pubLen,
-    getSecretKeyLength: (): number => secLen,
-    getSignatureLength: (): number => maxSigLen,
-  };
-}
-
 export function cleanupPQ(): void {
-  // No cleanup needed for browser version
+  cleanupDilithium();
+  // Add cleanup for other algorithms when they have browser wrappers
 }
 
 export function cleanupPQFull(): void {
-  // No cleanup needed for browser version
+  cleanupPQ();
 }
 
 export async function createSignatures(): Promise<PQSignatures> {
@@ -273,19 +113,20 @@ export async function createKEMFull(): Promise<PQKeyEncapsulation> {
   return pq.kem;
 }
 
-export function cleanupSignatures(): void {}
+export function cleanupSignatures(): void {
+  cleanupDilithium();
+}
 export function cleanupKEM(): void {}
 export function cleanupKEMFull(): void {}
 
-// Export placeholder functions
-export const initDilithium = () => Promise.resolve({});
+// Export the browser-specific init functions
+export const initDilithium = initDilithiumBrowser;
 export const initSphincs = () => Promise.resolve({});
 export const initFalcon = () => Promise.resolve({});
 export const initMlkem = () => Promise.resolve({});
 export const initFrodokem = () => Promise.resolve({});
 export const initMcElieceSmall = () => Promise.resolve({});
 export const initMcElieceFull = () => Promise.resolve({});
-export const cleanupDilithium = () => {};
 export const cleanupSphincs = () => {};
 export const cleanupFalcon = () => {};
 export const cleanupMlkem = () => {};
