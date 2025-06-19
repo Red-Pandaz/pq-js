@@ -1,21 +1,21 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "sig/dilithium": ["sig/dilithium"],
+      "sig/falcon": ["sig/falcon"],
+      "sig/sphincs": ["sig/sphincs"],
+      "kem/mlkem": ["kem/mlkem"],
+      "kem/frodokem": ["kem/frodokem"],
+      "kem/classic_mceliece": ["kem/classic_mceliece"]
+    },
     "target": "ES2020",
     "module": "commonjs",
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "noEmitOnError": true
+    "allowJs": false,
+    "noEmit": false
   },
-  "include": [
-    "index.ts",
-    "cli.ts",
-    "kem/**/*.ts",
-    "sig/**/*.ts",
-    "test/**/*.ts"
-  ]
+  "include": ["src/**/*", "test/**/*.ts"]
 }

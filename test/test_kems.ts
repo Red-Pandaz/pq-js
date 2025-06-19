@@ -1,4 +1,4 @@
-const pq = require('../index');
+const pq = require('../src/index');
 const { createPQ: createPQKEM, createPQFull: createPQFullKEM } = pq;
 
 // Set this flag to true to test the full build (all McEliece variants, 2GB RAM)

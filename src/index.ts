@@ -1,14 +1,14 @@
-const { init: initDilithium, cleanup: cleanupDilithium } = require('./sig/dilithium/src');
-const { init: initSphincs, cleanup: cleanupSphincs } = require('./sig/sphincs/src');
-const { init: initFalcon, cleanup: cleanupFalcon } = require('./sig/falcon/src');
-const { init: initMlkem, cleanup: cleanupMlkem } = require('./kem/mlkem/src');
-const { init: initFrodokem, cleanup: cleanupFrodokem } = require('./kem/frodokem/src');
+const { init: initDilithium, cleanup: cleanupDilithium } = require('../dist/sig/dilithium');
+const { init: initSphincs, cleanup: cleanupSphincs } = require('../dist/sig/sphincs');
+const { init: initFalcon, cleanup: cleanupFalcon } = require('../dist/sig/falcon');
+const { init: initMlkem, cleanup: cleanupMlkem } = require('../dist/kem/mlkem');
+const { init: initFrodokem, cleanup: cleanupFrodokem } = require('../dist/kem/frodokem');
 const { 
   initSmall: initMcElieceSmall, 
   initFull: initMcElieceFull, 
   cleanupSmall: cleanupMcElieceSmall, 
   cleanupFull: cleanupMcElieceFull 
-} = require('./kem/classic_mceliece/src');
+} = require('../dist/kem/classic_mceliece');
 
 // Type definitions for the unified API
 export interface PQSignatures {

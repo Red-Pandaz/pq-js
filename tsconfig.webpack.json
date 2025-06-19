@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".", // important for paths
+    "paths": {
+      "sig/*": ["sig/*"],
+      "kem/*": ["kem/*"]
+    },
+    "rootDir": ".",
+    "outDir": "dist-browser"
+  },
+  "include": [
+    "src/**/*",
+    "sig/*/src-browser/**/*",
+    "kem/*/src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "test/**/*"
+  ]
+}

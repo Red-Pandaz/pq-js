@@ -1,4 +1,4 @@
-const pqSig = require('../index');
+const pqSig = require('../src/index');
 const { createPQ: createPQSig } = pqSig;
 
 const sphincsVariants: string[] = [

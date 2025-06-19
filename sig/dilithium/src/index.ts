@@ -1,4 +1,4 @@
-const createDilithiumModule = require('../dist/dilithium_wrapper.js');
+const createDilithiumModule = require('./dilithium_wrapper.js');
 
 let dilithiumModuleInstance: any = null;
 let dilithiumWrappers: Record<string, any> | null = null;

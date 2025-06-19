@@ -1,4 +1,4 @@
-const createFrodoKEMModule = require('../dist/frodokem_wrapper.js');
+const createFrodoKEMModule = require('./frodokem_wrapper.js');
 
 const frodokemVariantNames: string[] = [
   'frodokem_640_aes',

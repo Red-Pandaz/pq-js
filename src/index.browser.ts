@@ -3,14 +3,7 @@
 // .readFileSync
 
 // Import browser-specific wrappers
-import { initDilithium as initDilithiumBrowser, cleanupDilithium } from './sig/dilithium/src-browser';
-
-// Static imports for other WASM JS wrappers (these will need browser versions too)
-import sphincsWrapper from './dist/sig/sphincs_wrapper.js';
-import falconWrapper from './dist/sig/falcon_wrapper.js';
-import mlkemWrapper from './dist/kem/mlkem_wrapper.js';
-import frodokemWrapper from './dist/kem/frodokem_wrapper.js';
-import mcelieceWrapper from './dist/kem/classic_mceliece_wrapper_small.js';
+import { initDilithium as initDilithiumBrowser, cleanupDilithium } from 'sig/dilithium/src-browser';
 
 // Type definitions for the unified API
 export interface PQSignatures {
@@ -30,51 +23,15 @@ export interface PQFull {
   kem: PQKeyEncapsulation;
 }
 
-// Browser-compatible WASM module loader
-async function loadWasmModule(moduleName: string): Promise<any> {
-  const moduleArg = {
-    locateFile: (path: string) => {
-      if (path.endsWith('.wasm')) {
-        return `./dist/${moduleName}.wasm`;
-      }
-      return path;
-    }
-  };
-
-  switch (moduleName) {
-    case 'sig/sphincs_wrapper':
-      return await sphincsWrapper(moduleArg);
-    case 'sig/falcon_wrapper':
-      return await falconWrapper(moduleArg);
-    case 'kem/mlkem_wrapper':
-      return await mlkemWrapper(moduleArg);
-    case 'kem/frodokem_wrapper':
-      return await frodokemWrapper(moduleArg);
-    case 'kem/classic_mceliece_wrapper_small':
-      return await mcelieceWrapper(moduleArg);
-    default:
-      throw new Error(`Unknown module: ${moduleName}`);
-  }
-}
-
 // Browser-compatible initialization function
 export async function createPQ(): Promise<PQFull> {
   try {
     // Initialize Dilithium using the new browser wrapper
     const dilithium = await initDilithiumBrowser();
     
-    // Load other WASM modules (these will need browser versions too)
-    const sphincsModule = await loadWasmModule('sig/sphincs_wrapper');
-    const falconModule = await loadWasmModule('sig/falcon_wrapper');
-    const mlkemModule = await loadWasmModule('kem/mlkem_wrapper');
-    const frodokemModule = await loadWasmModule('kem/frodokem_wrapper');
-    const mcelieceModule = await loadWasmModule('kem/classic_mceliece_wrapper_small');
-
-    // Initialize other signature schemes (placeholder for now)
+    // Placeholder for other algorithms until browser wrappers are available
     const sphincs = {};
     const falcon = {};
-    
-    // Initialize KEM schemes (placeholder for now)
     const mlkem = {};
     const frodokem = {};
     const mceliece = {};

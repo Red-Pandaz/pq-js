@@ -1,4 +1,4 @@
-const createSphincsModule = require('../dist/sphincs_wrapper.js');
+const createSphincsModule = require('./sphincs_wrapper.js');
 
 let sphincsModuleInstance: any = null;
 let sphincsWrappers: Record<string, any> | null = null;

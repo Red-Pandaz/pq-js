@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*",
+    "sig/*/src/**/*",
+    "kem/*/src/**/*"
+  ],
+  "exclude": [
+    "src/index.browser.ts",
+    "test/**/*",
+    "node_modules"
+  ]
+}

@@ -1,4 +1,4 @@
-const createMLKEMModule = require('../dist/mlkem_wrapper.js');
+const createMLKEMModule = require('./mlkem_wrapper.js');
 
 const mlkemVariantNames: string[] = [
   'mlkem_512',

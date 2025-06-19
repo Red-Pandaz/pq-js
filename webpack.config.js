@@ -2,23 +2,29 @@ const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
-  entry: './index.browser.ts',
+  entry: './src/index.browser.ts',
   target: 'web',
   externals: {
     // Exclude Emscripten modules from webpack processing
     // They should be loaded dynamically at runtime
-    './dist-browser/sig/dilithium_wrapper.js': 'commonjs ./dist-browser/sig/dilithium_wrapper.js',
-    './dist-browser/sig/falcon_wrapper.js': 'commonjs ./dist-browser/sig/falcon_wrapper.js',
-    './dist-browser/sig/sphincs_wrapper.js': 'commonjs ./dist-browser/sig/sphincs_wrapper.js',
-    './dist-browser/kem/mlkem_wrapper.js': 'commonjs ./dist-browser/kem/mlkem_wrapper.js',
-    './dist-browser/kem/frodokem_wrapper.js': 'commonjs ./dist-browser/kem/frodokem_wrapper.js',
-    './dist-browser/kem/classic_mceliece_wrapper.js': 'commonjs ./dist-browser/kem/classic_mceliece_wrapper.js',
+    './sig/dilithium/dist/dilithium_wrapper.js': 'commonjs ./sig/dilithium/dist/dilithium_wrapper.js',
+    './sig/falcon/dist/falcon_wrapper.js': 'commonjs ./sig/falcon/dist/falcon_wrapper.js',
+    './sig/sphincs/dist/sphincs_wrapper.js': 'commonjs ./sig/sphincs/dist/sphincs_wrapper.js',
+    './kem/mlkem/dist/mlkem_wrapper.js': 'commonjs ./kem/mlkem/dist/mlkem_wrapper.js',
+    './kem/frodokem/dist/frodokem_wrapper.js': 'commonjs ./kem/frodokem/dist/frodokem_wrapper.js',
+    './kem/classic_mceliece/dist/classic_mceliece_wrapper.js': 'commonjs ./kem/classic_mceliece/dist/classic_mceliece_wrapper.js',
+    './kem/classic_mceliece/dist/classic_mceliece_wrapper_small.js': 'commonjs ./kem/classic_mceliece/dist/classic_mceliece_wrapper_small.js',
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        use: 'ts-loader',
+        use: {
+          loader: 'ts-loader',
+          options: {
+            configFile: 'tsconfig.webpack.json'
+          }
+        },
         exclude: /node_modules/,
       },
       {
@@ -28,6 +34,10 @@ module.exports = {
     ],
   },
   resolve: {
+    alias: {
+      sig: path.resolve(__dirname, 'sig'),
+      kem: path.resolve(__dirname, 'kem'),
+    },
     extensions: ['.tsx', '.ts', '.js'],
     fallback: {
       "fs": false,

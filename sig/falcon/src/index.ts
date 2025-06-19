@@ -1,4 +1,4 @@
-const createFalconModule = require('../dist/falcon_wrapper.js');
+const createFalconModule = require('./falcon_wrapper.js');
 
 let falconModuleInstance: any = null;
 let falconWrappers: Record<string, any> | null = null;

@@ -1,5 +1,5 @@
-const createMcElieceFull = require('../dist/classic_mceliece_wrapper.js');
-const createMcElieceSmall = require('../dist/classic_mceliece_wrapper_small.js');
+const createMcElieceFull = require('./classic_mceliece_wrapper.js');
+const createMcElieceSmall = require('./classic_mceliece_wrapper_small.js');
 
 const smallVariantNames: string[] = [
   'classic_mceliece_348864',

@@ -21,17 +21,18 @@
   },
   "files": [
     "dist/",
+    "dist-browser/",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "test": "ts-node test/test_cli.ts && ts-node test/test_kems.ts && ts-node test/test_signatures.ts",
+    "test": "ts-node test/test_cli.ts; ts-node test/test_kems.ts; ts-node test/test_signatures.ts",
     "test:cli": "ts-node test/test_cli.ts",
     "test:kems": "ts-node test/test_kems.ts",
     "test:signatures": "ts-node test/test_signatures.ts",
-    "build": "tsc && npm run copy-wrappers && npm run build-browser",
-    "build-browser": "webpack --mode production && mv dist/index.browser.d.ts dist-browser/index.browser.d.ts",
-    "copy-wrappers": "mkdir -p dist/kem dist/sig && cp kem/*/dist/*.js dist/kem/ && cp kem/*/dist/*.wasm dist/kem/ && cp sig/*/dist/*.js dist/sig/ && cp sig/*/dist/*.wasm dist/sig/ && mkdir -p dist/sig/dilithium/dist dist/sig/falcon/dist dist/sig/sphincs/dist dist/kem/mlkem/dist dist/kem/frodokem/dist dist/kem/classic_mceliece/dist && cp sig/dilithium/dist/* dist/sig/dilithium/dist/ && cp sig/falcon/dist/* dist/sig/falcon/dist/ && cp sig/sphincs/dist/* dist/sig/sphincs/dist/ && cp kem/mlkem/dist/* dist/kem/mlkem/dist/ && cp kem/frodokem/dist/* dist/kem/frodokem/dist/ && cp kem/classic_mceliece/dist/* dist/kem/classic_mceliece/dist/ && mkdir -p dist-browser/sig dist-browser/kem && cp sig/dilithium/dist-browser/*.js dist-browser/sig/ && cp sig/dilithium/dist-browser/*.wasm dist-browser/sig/",
+    "build": "tsc -p tsconfig.build.json && npm run build-browser",
+    "postbuild": "node scripts/postbuild.js",
+    "build-browser": "webpack --mode production",
     "cli": "node dist/cli.js",
     "prepublishOnly": "npm run build"
   },
