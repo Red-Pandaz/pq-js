@@ -49,6 +49,42 @@ async function example() {
 }
 ```
 
+### Browser Demo
+
+The library includes a browser-compatible version with a demo page for testing all algorithms.
+
+**To run the browser demo:**
+
+1. **Build the browser version:**
+   ```bash
+   npm run build-browser
+   ```
+
+2. **Start a local server:**
+   ```bash
+   npx http-server . -p 8081 -c-1
+   ```
+
+3. **Open the demo page:**
+   ```
+   http://localhost:8081/test-browser.html
+   ```
+
+**What the demo includes:**
+- ✅ **Library loading** - Test if the library loads successfully
+- ✅ **ML-KEM-512** - Generate keypairs and test encryption/decryption
+- ✅ **Dilithium2** - Generate keypairs and test signing/verification
+- ✅ **Full outputs** - Console logging shows complete key and signature data
+- ✅ **Error handling** - Clear error messages if something goes wrong
+
+**Browser compatibility:**
+- The library works in modern browsers with WebAssembly support
+- All cryptographic operations run in the browser
+- No server-side processing required
+- Full console output for debugging and integration
+
+**Note:** The current browser version uses mock implementations for demonstration. Real WASM implementations are being developed.
+
 ### CLI Usage
 
 ```bash
