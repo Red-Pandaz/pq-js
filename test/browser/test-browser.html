@@ -501,50 +501,66 @@
         }
 
         async function testMcElieceSmall() {
-            updateStatus('kemStatus', 'Testing Classic McEliece Small...', 'info');
-            const results = {};
-
             try {
-                // For now, use placeholder until the browser module is properly set up
-                console.log('Classic McEliece Small module not yet available in browser');
-                const smallVariants = ['classic_mceliece_348864', 'classic_mceliece_348864f', 'classic_mceliece_460896', 'classic_mceliece_460896f'];
+                updateStatus('kemStatus', 'Testing Classic McEliece Small...', 'info');
+                await pq.kem.mceliece.initSmall();
+                const smallResults = {};
+                const smallVariants = [
+                    'classic_mceliece_348864', 'classic_mceliece_348864f', 
+                    'classic_mceliece_460896', 'classic_mceliece_460896f'
+                ];
 
                 for (const variant of smallVariants) {
-                    console.warn(`${variant} not available in small module`);
-                    results[variant] = false;
+                    if (pq.kem.mceliece[variant]) {
+                        console.log(`\n--- Testing ${variant} ---`);
+                        smallResults[variant] = await testKEM(pq.kem.mceliece[variant]);
+                    } else {
+                        console.warn(`${variant} not available in small module`);
+                        smallResults[variant] = false;
+                    }
                 }
 
-                updateResults('kemResults', results);
-                updateStatus('kemStatus', 'Classic McEliece Small tests completed (not available)', 'info');
+                updateResults('kemResults', { ...kemResults, ...smallResults });
+                updateStatus('kemStatus', 'Classic McEliece Small tests complete.', 'success');
             } catch (error) {
-                console.error('Classic McEliece Small test error:', error);
-                updateStatus('kemStatus', `Classic McEliece Small test error: ${error.message}`, 'error');
+                console.error('McEliece Small test error:', error);
+                updateStatus('kemStatus', `McEliece Small test failed: ${error.message}`, 'error');
             }
         }
-
+        
         async function testMcElieceFull() {
-            updateStatus('kemStatus', 'Testing Classic McEliece Full...', 'info');
-            const results = {};
+            if (!pq.kem.mceliece.init) {
+                console.warn('Classic McEliece Full module not yet available in browser');
+                return;
+            }
 
             try {
-                // For now, use placeholder until the browser module is properly set up
-                console.log('Classic McEliece Full module not yet available in browser');
+                updateStatus('kemStatus', 'Initializing and testing Classic McEliece Full... (this may take a while)', 'info');
+                await pq.kem.mceliece.init(); // Initialize the full module
+                const fullResults = {};
                 const fullVariants = [
-                    'classic_mceliece_348864', 'classic_mceliece_348864f', 'classic_mceliece_460896', 'classic_mceliece_460896f',
-                    'classic_mceliece_6688128', 'classic_mceliece_6688128f', 'classic_mceliece_6960119', 'classic_mceliece_6960119f',
+                    'classic_mceliece_348864', 'classic_mceliece_348864f',
+                    'classic_mceliece_460896', 'classic_mceliece_460896f',
+                    'classic_mceliece_6688128', 'classic_mceliece_6688128f',
+                    'classic_mceliece_6960119', 'classic_mceliece_6960119f',
                     'classic_mceliece_8192128', 'classic_mceliece_8192128f'
                 ];
 
                 for (const variant of fullVariants) {
-                    console.warn(`${variant} not available in full module`);
-                    results[variant] = false;
+                    if (pq.kem.mceliece[variant]) {
+                        console.log(`\n--- Testing ${variant} ---`);
+                        fullResults[variant] = await testKEM(pq.kem.mceliece[variant]);
+                    } else {
+                        console.warn(`${variant} not available in full module`);
+                        fullResults[variant] = false;
+                    }
                 }
 
-                updateResults('kemResults', results);
-                updateStatus('kemStatus', 'Classic McEliece Full tests completed (not available)', 'info');
+                updateResults('kemResults', { ...kemResults, ...fullResults });
+                updateStatus('kemStatus', 'Classic McEliece Full tests complete.', 'success');
             } catch (error) {
-                console.error('Classic McEliece Full test error:', error);
-                updateStatus('kemStatus', `Classic McEliece Full test error: ${error.message}`, 'error');
+                console.error('McEliece Full test error:', error);
+                updateStatus('kemStatus', `McEliece Full test failed: ${error.message}`, 'error');
             }
         }
 

@@ -187,7 +187,7 @@ async function initFalcon(): Promise<Record<string, any>> {
         const moduleArg = {
           locateFile: (path: string) => {
             if (path.endsWith('.wasm')) {
-              return '../../sig/falcon/dist-browser/falcon_wrapper.wasm';
+              return '/dist-browser/sig/falcon/falcon_wrapper.wasm';
             }
             return path;
           }
@@ -200,13 +200,13 @@ async function initFalcon(): Promise<Record<string, any>> {
       } else {
         // Load the script first
         const script = document.createElement('script');
-        script.src = '../../sig/falcon/dist-browser/falcon_wrapper.js';
+        script.src = '/dist-browser/sig/falcon/falcon_wrapper.js';
         script.onload = async () => {
           try {
             const moduleArg = {
               locateFile: (path: string) => {
                 if (path.endsWith('.wasm')) {
-                  return '../../sig/falcon/dist-browser/falcon_wrapper.wasm';
+                  return '/dist-browser/sig/falcon/falcon_wrapper.wasm';
                 }
                 return path;
               }

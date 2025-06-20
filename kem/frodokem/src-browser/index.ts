@@ -11,18 +11,18 @@ async function createFrodokemWrapper(algNum: number): Promise<any> {
 
   const Module = frodokemModuleInstance;
 
-  // Initialize all variants
-  const initResult: number = Module._init_frodokem_variants();
+  // Initialize the specific variant (using AES variant)
+  const initResult: number = Module[`_init_frodokem_${algNum}_aes`]();
   
   if (initResult !== 1) {
-    throw new Error('Failed to initialize frodokem variants');
+    throw new Error(`Failed to initialize frodokem ${algNum}`);
   }
 
   // Get lengths before creating wrapper
-  const pubLen: number = Module[`_frodokem${algNum}_get_public_key_length`]();
-  const secLen: number = Module[`_frodokem${algNum}_get_secret_key_length`]();
-  const ctLen: number = Module[`_frodokem${algNum}_get_ciphertext_length`]();
-  const ssLen: number = Module[`_frodokem${algNum}_get_shared_secret_length`]();
+  const pubLen: number = Module[`_frodokem_${algNum}_aes_get_public_key_length`]();
+  const secLen: number = Module[`_frodokem_${algNum}_aes_get_secret_key_length`]();
+  const ctLen: number = Module[`_frodokem_${algNum}_aes_get_ciphertext_length`]();
+  const ssLen: number = Module[`_frodokem_${algNum}_aes_get_shared_secret_length`]();
 
   // Helper function to check OQS status codes
   function checkOQSStatus(result: number, operation: string) {
@@ -68,7 +68,7 @@ async function createFrodokemWrapper(algNum: number): Promise<any> {
           throw new Error('Failed to allocate memory for keypair');
         }
         // Call the keypair function directly from the module
-        const result: number = Module[`_frodokem${algNum}_keypair`](pkPtr, skPtr);
+        const result: number = Module[`_frodokem_${algNum}_aes_keypair`](pkPtr, skPtr);
         checkOQSStatus(result, 'Keypair generation');
         // Create copies of the data before freeing the memory
         const publicKey: Uint8Array | null = copyMemory(pkPtr, pubLen);
@@ -100,7 +100,7 @@ async function createFrodokemWrapper(algNum: number): Promise<any> {
       const ssPtr: number = Module._malloc(ssLen);
       if (!ssPtr) throw new Error('Failed to allocate shared secret buffer');
       try {
-        const result: number = Module[`_frodokem${algNum}_encaps`](ctPtr, ssPtr, pkPtr);
+        const result: number = Module[`_frodokem_${algNum}_aes_encaps`](ctPtr, ssPtr, pkPtr);
         checkOQSStatus(result, 'Encapsulation');
         // Create copies of the data before freeing the memory
         const ciphertext: Uint8Array | null = copyMemory(ctPtr, ctLen);
@@ -137,7 +137,7 @@ async function createFrodokemWrapper(algNum: number): Promise<any> {
       const ssPtr: number = Module._malloc(ssLen);
       if (!ssPtr) throw new Error('Failed to allocate shared secret buffer');
       try {
-        const result: number = Module[`_frodokem${algNum}_decaps`](ssPtr, ctPtr, skPtr);
+        const result: number = Module[`_frodokem_${algNum}_aes_decaps`](ssPtr, ctPtr, skPtr);
         checkOQSStatus(result, 'Decapsulation');
         // Create a copy of the shared secret data
         const sharedSecret: Uint8Array | null = copyMemory(ssPtr, ssLen);
@@ -169,7 +169,7 @@ async function initFrodokem(): Promise<Record<string, any>> {
     // Load the WASM module via script tag instead of dynamic import
     return new Promise((resolve, reject) => {
       // Check if the script is already loaded
-      if (typeof (window as any).Module === 'function') {
+      if (typeof (window as any).FrodokemModule === 'function') {
         // Module is already available, initialize it
         const moduleArg = {
           locateFile: (path: string) => {
@@ -180,7 +180,7 @@ async function initFrodokem(): Promise<Record<string, any>> {
           }
         };
 
-        (window as any).Module(moduleArg).then((Module: any) => {
+        (window as any).FrodokemModule(moduleArg).then((Module: any) => {
           frodokemModuleInstance = Module;
           createWrappers().then(() => resolve(frodokemWrappers!)).catch(reject);
         }).catch(reject);
@@ -199,7 +199,7 @@ async function initFrodokem(): Promise<Record<string, any>> {
               }
             };
 
-            const Module = await (window as any).Module(moduleArg);
+            const Module = await (window as any).FrodokemModule(moduleArg);
             frodokemModuleInstance = Module;
             await createWrappers();
             resolve(frodokemWrappers!);

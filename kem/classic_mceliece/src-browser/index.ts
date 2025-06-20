@@ -23,26 +23,48 @@ const fullVariantNames: string[] = [
   'classic_mceliece_8192128f'
 ];
 
-async function loadWasmModule(moduleName: string): Promise<any> {
+async function initModule(
+  moduleName: string, 
+  exportName: string
+): Promise<any> {
   return new Promise((resolve, reject) => {
-    // Check if module is already loaded
-    if ((window as any)[moduleName]) {
-      resolve((window as any)[moduleName]);
-      return;
+    const moduleFactory = (window as any)[exportName];
+    if (typeof moduleFactory === 'function') {
+      const moduleArg = {
+        locateFile: (path: string) => {
+          if (path.endsWith('.wasm')) {
+            return `/dist-browser/kem/classic_mceliece/${moduleName}.wasm`;
+          }
+          return path;
+        }
+      };
+      moduleFactory(moduleArg).then(resolve).catch(reject);
+    } else {
+      const script = document.createElement('script');
+      script.src = `/dist-browser/kem/classic_mceliece/${moduleName}.js`;
+      script.onload = async () => {
+        try {
+          const newModuleFactory = (window as any)[exportName];
+          if (typeof newModuleFactory !== 'function') {
+            return reject(new Error(`Module factory ${exportName} not found after script load.`));
+          }
+          const moduleArg = {
+            locateFile: (path: string) => {
+              if (path.endsWith('.wasm')) {
+                return `/dist-browser/kem/classic_mceliece/${moduleName}.wasm`;
+              }
+              return path;
+            }
+          };
+          const instance = await newModuleFactory(moduleArg);
+          resolve(instance);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      script.onerror = () => reject(new Error(`Failed to load ${moduleName}.js`));
+      document.head.appendChild(script);
     }
-
-    // Load the WASM module
-    const script = document.createElement('script');
-    script.src = `./${moduleName}.js`;
-    script.onload = () => {
-      if ((window as any)[moduleName]) {
-        resolve((window as any)[moduleName]);
-      } else {
-        reject(new Error(`Module ${moduleName} not found after loading`));
-      }
-    };
-    script.onerror = () => reject(new Error(`Failed to load ${moduleName}`));
-    document.head.appendChild(script);
   });
 }
 
@@ -124,7 +146,7 @@ async function createMcElieceWrapper(variant: string, createModule: () => Promis
 async function initSmall(): Promise<Record<string, any>> {
   if (smallWrappers) return smallWrappers;
   if (!smallModuleInstance) {
-    smallModuleInstance = await loadWasmModule('classic_mceliece_wrapper_small');
+    smallModuleInstance = await initModule('classic_mceliece_wrapper_small', 'McElieceSmallModule');
   }
   smallWrappers = {} as Record<string, any>;
   for (const variant of smallVariantNames) {
@@ -140,7 +162,7 @@ async function initSmall(): Promise<Record<string, any>> {
 async function init(): Promise<Record<string, any>> {
   if (fullWrappers) return fullWrappers;
   if (!fullModuleInstance) {
-    fullModuleInstance = await loadWasmModule('classic_mceliece_wrapper');
+    fullModuleInstance = await initModule('classic_mceliece_wrapper', 'McElieceFullModule');
   }
   fullWrappers = {} as Record<string, any>;
   for (const variant of fullVariantNames) {

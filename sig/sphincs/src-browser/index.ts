@@ -177,7 +177,7 @@ async function initSphincs(): Promise<Record<string, any>> {
         const moduleArg = {
           locateFile: (path: string) => {
             if (path.endsWith('.wasm')) {
-              return '../../sig/sphincs/dist-browser/sphincs_wrapper.wasm';
+              return '/dist-browser/sig/sphincs/sphincs_wrapper.wasm';
             }
             return path;
           }
@@ -190,13 +190,13 @@ async function initSphincs(): Promise<Record<string, any>> {
       } else {
         // Load the script first
         const script = document.createElement('script');
-        script.src = '../../sig/sphincs/dist-browser/sphincs_wrapper.js';
+        script.src = '/dist-browser/sig/sphincs/sphincs_wrapper.js';
         script.onload = async () => {
           try {
             const moduleArg = {
               locateFile: (path: string) => {
                 if (path.endsWith('.wasm')) {
-                  return '../../sig/sphincs/dist-browser/sphincs_wrapper.wasm';
+                  return '/dist-browser/sig/sphincs/sphincs_wrapper.wasm';
                 }
                 return path;
               }

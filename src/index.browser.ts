@@ -6,9 +6,9 @@
 import { initDilithium as initDilithiumBrowser, cleanupDilithium } from 'sig/dilithium/src-browser';
 import { initFalcon as initFalconBrowser, cleanupFalcon } from 'sig/falcon/src-browser';
 import { initSphincs as initSphincsBrowser, cleanupSphincs as cleanupSphincsBrowser } from 'sig/sphincs/src-browser';
-// import { initMlkem as initMlkemBrowser, cleanupMlkem } from 'kem/mlkem/src-browser';
-// import { initFrodokem as initFrodokemBrowser, cleanupFrodokem } from 'kem/frodokem/src-browser';
-// import { init as initMcElieceBrowser, cleanup as cleanupMcElieceBrowser } from 'kem/classic_mceliece/src-browser';
+import { initMlkem as initMlkemBrowser, cleanupMlkem as cleanupMlkemBrowser } from 'kem/mlkem/src-browser';
+import { initFrodokem as initFrodokemBrowser, cleanupFrodokem as cleanupFrodokemBrowser } from 'kem/frodokem/src-browser';
+import { init as initMcElieceBrowser, cleanup as cleanupMcElieceBrowser } from 'kem/classic_mceliece/src-browser';
 
 // Type definitions for the unified API
 export interface PQSignatures {
@@ -40,10 +40,10 @@ export async function createPQ(): Promise<PQFull> {
     // Initialize SPHINCS+ using the new browser wrapper
     const sphincs = await initSphincsBrowser();
     
-    // Placeholder for other algorithms until WASM loading conflicts are resolved
-    const mlkem = {};
-    const frodokem = {};
-    const mceliece = {};
+    // Initialize KEM algorithms
+    const mlkem = await initMlkemBrowser();
+    const frodokem = await initFrodokemBrowser();
+    const mceliece = await initMcElieceBrowser();
 
     return {
       signatures: { dilithium, sphincs, falcon },
@@ -59,6 +59,9 @@ export function cleanupPQ(): void {
   cleanupDilithium();
   cleanupFalcon();
   cleanupSphincsBrowser();
+  cleanupMlkemBrowser();
+  cleanupFrodokemBrowser();
+  cleanupMcElieceBrowser();
 }
 
 export function cleanupPQFull(): void {
@@ -86,18 +89,26 @@ export function cleanupSignatures(): void {
   cleanupSphincsBrowser();
 }
 
-export function cleanupKEM(): void {}
+export function cleanupKEM(): void {
+  cleanupMlkemBrowser();
+  cleanupFrodokemBrowser();
+  cleanupMcElieceBrowser();
+}
 
-export function cleanupKEMFull(): void {}
+export function cleanupKEMFull(): void {
+  cleanupMlkemBrowser();
+  cleanupFrodokemBrowser();
+  cleanupMcElieceBrowser();
+}
 
 // Export the browser-specific init functions
 export const initDilithium = initDilithiumBrowser;
 export const initFalcon = initFalconBrowser;
 export const initSphincs = initSphincsBrowser;
-export const initMlkem = () => Promise.resolve({});
-export const initFrodokem = () => Promise.resolve({});
-export const initMcEliece = () => Promise.resolve({});
+export const initMlkem = initMlkemBrowser;
+export const initFrodokem = initFrodokemBrowser;
+export const initMcEliece = initMcElieceBrowser;
 export const cleanupSphincs = cleanupSphincsBrowser;
-export const cleanupMlkem = () => {};
-export const cleanupFrodokem = () => {};
-export const cleanupMcEliece = () => {}; 
+export const cleanupMlkem = cleanupMlkemBrowser;
+export const cleanupFrodokem = cleanupFrodokemBrowser;
+export const cleanupMcEliece = cleanupMcElieceBrowser; 

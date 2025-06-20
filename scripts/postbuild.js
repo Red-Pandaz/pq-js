@@ -18,7 +18,13 @@ wrappers.forEach(wrapper => {
   const algo = path.basename(wrapper);
   const group = wrapper.split('/')[0]; // 'sig' or 'kem'
 
-  const srcDir = path.join(root, wrapper, 'dist');
+  // For all algorithms, use dist-browser directory since that's where the browser-compatible builds are
+  let srcDir = path.join(root, wrapper, 'dist-browser');
+  // Fallback to dist if dist-browser doesn't exist
+  if (!fs.existsSync(srcDir)) {
+    srcDir = path.join(root, wrapper, 'dist');
+  }
+
   const destDir = path.join(distDir, group, algo);
 
   if (!fs.existsSync(srcDir)) {
@@ -58,7 +64,13 @@ wrappers.forEach(wrapper => {
   const algo = path.basename(wrapper);
   const group = wrapper.split('/')[0]; // 'sig' or 'kem'
 
-  const srcDir = path.join(root, wrapper, 'dist');
+  // For all algorithms, use dist-browser directory since that's where the browser-compatible builds are
+  let srcDir = path.join(root, wrapper, 'dist-browser');
+  // Fallback to dist if dist-browser doesn't exist
+  if (!fs.existsSync(srcDir)) {
+    srcDir = path.join(root, wrapper, 'dist');
+  }
+  
   const destDir = path.join(distBrowserDir, group, algo);
 
   if (!fs.existsSync(srcDir)) {

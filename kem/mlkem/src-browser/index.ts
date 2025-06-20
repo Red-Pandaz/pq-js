@@ -11,18 +11,18 @@ async function createMlkemWrapper(algNum: number): Promise<any> {
 
   const Module = mlkemModuleInstance;
 
-  // Initialize all variants
-  const initResult: number = Module._init_mlkem_variants();
+  // Initialize the specific variant
+  const initResult: number = Module[`_init_mlkem_${algNum}`]();
   
   if (initResult !== 1) {
-    throw new Error('Failed to initialize mlkem variants');
+    throw new Error(`Failed to initialize mlkem ${algNum}`);
   }
 
   // Get lengths before creating wrapper
-  const pubLen: number = Module[`_mlkem${algNum}_get_public_key_length`]();
-  const secLen: number = Module[`_mlkem${algNum}_get_secret_key_length`]();
-  const ctLen: number = Module[`_mlkem${algNum}_get_ciphertext_length`]();
-  const ssLen: number = Module[`_mlkem${algNum}_get_shared_secret_length`]();
+  const pubLen: number = Module[`_mlkem_${algNum}_get_public_key_length`]();
+  const secLen: number = Module[`_mlkem_${algNum}_get_secret_key_length`]();
+  const ctLen: number = Module[`_mlkem_${algNum}_get_ciphertext_length`]();
+  const ssLen: number = Module[`_mlkem_${algNum}_get_shared_secret_length`]();
 
   // Helper function to check OQS status codes
   function checkOQSStatus(result: number, operation: string) {
@@ -68,7 +68,7 @@ async function createMlkemWrapper(algNum: number): Promise<any> {
           throw new Error('Failed to allocate memory for keypair');
         }
         // Call the keypair function directly from the module
-        const result: number = Module[`_mlkem${algNum}_keypair`](pkPtr, skPtr);
+        const result: number = Module[`_mlkem_${algNum}_keypair`](pkPtr, skPtr);
         checkOQSStatus(result, 'Keypair generation');
         // Create copies of the data before freeing the memory
         const publicKey: Uint8Array | null = copyMemory(pkPtr, pubLen);
@@ -100,7 +100,7 @@ async function createMlkemWrapper(algNum: number): Promise<any> {
       const ssPtr: number = Module._malloc(ssLen);
       if (!ssPtr) throw new Error('Failed to allocate shared secret buffer');
       try {
-        const result: number = Module[`_mlkem${algNum}_encaps`](ctPtr, ssPtr, pkPtr);
+        const result: number = Module[`_mlkem_${algNum}_encaps`](ctPtr, ssPtr, pkPtr);
         checkOQSStatus(result, 'Encapsulation');
         // Create copies of the data before freeing the memory
         const ciphertext: Uint8Array | null = copyMemory(ctPtr, ctLen);
@@ -137,7 +137,7 @@ async function createMlkemWrapper(algNum: number): Promise<any> {
       const ssPtr: number = Module._malloc(ssLen);
       if (!ssPtr) throw new Error('Failed to allocate shared secret buffer');
       try {
-        const result: number = Module[`_mlkem${algNum}_decaps`](ssPtr, ctPtr, skPtr);
+        const result: number = Module[`_mlkem_${algNum}_decaps`](ssPtr, ctPtr, skPtr);
         checkOQSStatus(result, 'Decapsulation');
         // Create a copy of the shared secret data
         const sharedSecret: Uint8Array | null = copyMemory(ssPtr, ssLen);
@@ -169,7 +169,7 @@ async function initMlkem(): Promise<Record<string, any>> {
     // Load the WASM module via script tag instead of dynamic import
     return new Promise((resolve, reject) => {
       // Check if the script is already loaded
-      if (typeof (window as any).Module === 'function') {
+      if (typeof (window as any).MlkemModule === 'function') {
         // Module is already available, initialize it
         const moduleArg = {
           locateFile: (path: string) => {
@@ -180,7 +180,7 @@ async function initMlkem(): Promise<Record<string, any>> {
           }
         };
 
-        (window as any).Module(moduleArg).then((Module: any) => {
+        (window as any).MlkemModule(moduleArg).then((Module: any) => {
           mlkemModuleInstance = Module;
           createWrappers().then(() => resolve(mlkemWrappers!)).catch(reject);
         }).catch(reject);
@@ -199,7 +199,7 @@ async function initMlkem(): Promise<Record<string, any>> {
               }
             };
 
-            const Module = await (window as any).Module(moduleArg);
+            const Module = await (window as any).MlkemModule(moduleArg);
             mlkemModuleInstance = Module;
             await createWrappers();
             resolve(mlkemWrappers!);
