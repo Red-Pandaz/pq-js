@@ -4,6 +4,11 @@
 
 // Import browser-specific wrappers
 import { initDilithium as initDilithiumBrowser, cleanupDilithium } from 'sig/dilithium/src-browser';
+import { initFalcon as initFalconBrowser, cleanupFalcon } from 'sig/falcon/src-browser';
+import { initSphincs as initSphincsBrowser, cleanupSphincs as cleanupSphincsBrowser } from 'sig/sphincs/src-browser';
+// import { initMlkem as initMlkemBrowser, cleanupMlkem } from 'kem/mlkem/src-browser';
+// import { initFrodokem as initFrodokemBrowser, cleanupFrodokem } from 'kem/frodokem/src-browser';
+// import { init as initMcElieceBrowser, cleanup as cleanupMcElieceBrowser } from 'kem/classic_mceliece/src-browser';
 
 // Type definitions for the unified API
 export interface PQSignatures {
@@ -29,9 +34,13 @@ export async function createPQ(): Promise<PQFull> {
     // Initialize Dilithium using the new browser wrapper
     const dilithium = await initDilithiumBrowser();
     
-    // Placeholder for other algorithms until browser wrappers are available
-    const sphincs = {};
-    const falcon = {};
+    // Initialize Falcon using the new browser wrapper
+    const falcon = await initFalconBrowser();
+    
+    // Initialize SPHINCS+ using the new browser wrapper
+    const sphincs = await initSphincsBrowser();
+    
+    // Placeholder for other algorithms until WASM loading conflicts are resolved
     const mlkem = {};
     const frodokem = {};
     const mceliece = {};
@@ -48,7 +57,8 @@ export async function createPQ(): Promise<PQFull> {
 
 export function cleanupPQ(): void {
   cleanupDilithium();
-  // Add cleanup for other algorithms when they have browser wrappers
+  cleanupFalcon();
+  cleanupSphincsBrowser();
 }
 
 export function cleanupPQFull(): void {
@@ -72,21 +82,22 @@ export async function createKEMFull(): Promise<PQKeyEncapsulation> {
 
 export function cleanupSignatures(): void {
   cleanupDilithium();
+  cleanupFalcon();
+  cleanupSphincsBrowser();
 }
+
 export function cleanupKEM(): void {}
+
 export function cleanupKEMFull(): void {}
 
 // Export the browser-specific init functions
 export const initDilithium = initDilithiumBrowser;
-export const initSphincs = () => Promise.resolve({});
-export const initFalcon = () => Promise.resolve({});
+export const initFalcon = initFalconBrowser;
+export const initSphincs = initSphincsBrowser;
 export const initMlkem = () => Promise.resolve({});
 export const initFrodokem = () => Promise.resolve({});
-export const initMcElieceSmall = () => Promise.resolve({});
-export const initMcElieceFull = () => Promise.resolve({});
-export const cleanupSphincs = () => {};
-export const cleanupFalcon = () => {};
+export const initMcEliece = () => Promise.resolve({});
+export const cleanupSphincs = cleanupSphincsBrowser;
 export const cleanupMlkem = () => {};
 export const cleanupFrodokem = () => {};
-export const cleanupMcElieceSmall = () => {};
-export const cleanupMcElieceFull = () => {}; 
+export const cleanupMcEliece = () => {}; 

@@ -14,7 +14,7 @@
             try {
                 // Test 1: Check if WASM file exists
                 console.log('Testing WASM file availability...');
-                const response = await fetch('./dist-browser/sig/dilithium_wrapper.wasm');
+                const response = await fetch('../../dist-browser/sig/dilithium_wrapper.wasm');
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);

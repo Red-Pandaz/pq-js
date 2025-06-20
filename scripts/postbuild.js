@@ -3,6 +3,7 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const distDir = path.join(root, 'dist');
+const distBrowserDir = path.join(root, 'dist-browser');
 const wrappers = [
   'sig/dilithium',
   'sig/falcon',
@@ -52,7 +53,33 @@ wrappers.forEach(wrapper => {
   }
 });
 
-// 2. Move dist/src/*.js to dist/
+// 2. Copy wrapper files to dist-browser/[sig|kem]/[algo] for browser usage
+wrappers.forEach(wrapper => {
+  const algo = path.basename(wrapper);
+  const group = wrapper.split('/')[0]; // 'sig' or 'kem'
+
+  const srcDir = path.join(root, wrapper, 'dist');
+  const destDir = path.join(distBrowserDir, group, algo);
+
+  if (!fs.existsSync(srcDir)) {
+    console.warn(`⚠️  Wrapper build output not found for browser: ${srcDir}`);
+    return;
+  }
+
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
+
+  const files = fs.readdirSync(srcDir);
+  files.forEach(file => {
+    const src = path.join(srcDir, file);
+    const dest = path.join(destDir, file);
+    fs.copyFileSync(src, dest);
+    console.log(`Copied ${src} → ${dest}`);
+  });
+});
+
+// 3. Move dist/src/*.js to dist/
 const distSrc = path.join(distDir, 'src');
 if (fs.existsSync(distSrc)) {
   const files = fs.readdirSync(distSrc);

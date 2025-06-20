@@ -5,14 +5,14 @@
     <h1>Dilithium Test</h1>
     
     <!-- Load the Emscripten module -->
-    <script src="./dist-browser/sig/dilithium_wrapper.js"></script>
+    <script src="../../dist-browser/sig/dilithium_wrapper.js"></script>
     
     <script>
       // Wait for the module to be available
       Module({
         locateFile: (path) => {
           if (path.endsWith('.wasm')) {
-            return './dist-browser/sig/dilithium_wrapper.wasm';
+            return '../../dist-browser/sig/dilithium_wrapper.wasm';
           }
           return path;
         }

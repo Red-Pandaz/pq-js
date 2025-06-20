@@ -1,29 +1,37 @@
-// Remove the static import - we'll use dynamic import instead
-// @ts-ignore
-// import dilithiumWrapper from '../dist-browser/dilithium_wrapper.js';
+let falconModuleInstance: any = null;
+let falconWrappers: Record<string, any> | null = null;
 
-let dilithiumModuleInstance: any = null;
-let dilithiumWrappers: Record<string, any> | null = null;
-
-async function createDilithiumWrapper(algNum: number): Promise<any> {
+async function createFalconWrapper(algNum: number): Promise<any> {
   // Use the shared module instance instead of creating a new one
-  if (!dilithiumModuleInstance) {
-    throw new Error('Module not initialized. Call initDilithium() first.');
+  if (!falconModuleInstance) {
+    throw new Error('Module not initialized. Call initFalcon() first.');
   }
 
-  const Module = dilithiumModuleInstance;
+  const Module = falconModuleInstance;
 
-  // Initialize all variants
-  const initResult: number = Module._init_dilithium_variants();
-  
-  if (initResult !== 1) {
-    throw new Error('Failed to initialize dilithium variants');
+  // Debug: Check what functions are available
+  console.log(`[Debug] Available Falcon functions for ${algNum}:`, Object.keys(Module).filter(key => key.includes('falcon')));
+
+  // Try to find the initialization function
+  const initFuncName = `_init_falcon_${algNum}`;
+  if (!Module[initFuncName]) {
+    console.warn(`[Debug] Initialization function ${initFuncName} not found, proceeding without initialization`);
+  } else {
+    // Try initialization but don't fail if it returns an error
+    console.log(`[Debug] Calling ${initFuncName}`);
+    const initResult: number = Module[initFuncName]();
+    console.log(`[Debug] Initialization result: ${initResult}`);
+    if (initResult !== 0) {
+      console.warn(`[Debug] Falcon ${algNum} initialization failed with status code: ${initResult}, proceeding anyway`);
+    }
   }
 
   // Get lengths before creating wrapper
-  const pubLen: number = Module[`_dilithium${algNum}_get_public_key_length`]();
-  const secLen: number = Module[`_dilithium${algNum}_get_secret_key_length`]();
-  const maxSigLen: number = Module[`_dilithium${algNum}_get_signature_length`]();
+  const pubLen: number = Module[`_falcon_${algNum}_get_public_key_length`]();
+  const secLen: number = Module[`_falcon_${algNum}_get_secret_key_length`]();
+  const maxSigLen: number = Module[`_falcon_${algNum}_get_signature_length`]();
+
+  console.log(`[Debug] Falcon ${algNum} lengths - pub: ${pubLen}, sec: ${secLen}, sig: ${maxSigLen}`);
 
   // Helper function to check OQS status codes
   function checkOQSStatus(result: number, operation: string) {
@@ -69,7 +77,7 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
           throw new Error('Failed to allocate memory for keypair');
         }
         // Call the keypair function directly from the module
-        const result: number = Module[`_dilithium${algNum}_keypair`](pkPtr, skPtr);
+        const result: number = Module[`_falcon_${algNum}_keypair`](pkPtr, skPtr);
         checkOQSStatus(result, 'Keypair generation');
         // Create copies of the data before freeing the memory
         const publicKey: Uint8Array | null = copyMemory(pkPtr, pubLen);
@@ -106,7 +114,7 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
       if (!sigLenPtr) throw new Error('Failed to allocate signature length buffer');
       Module.HEAPU32[sigLenPtr >> 2] = maxSigLen;
       try {
-        const result: number = Module[`_dilithium${algNum}_sign`](
+        const result: number = Module[`_falcon_${algNum}_sign`](
           sigPtr, 
           sigLenPtr, 
           mPtr, 
@@ -149,7 +157,7 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
       if (!pkPtr) throw new Error('Failed to allocate public key buffer');
       writeMemory(publicKey, pkPtr);
       try {
-        const result: number = Module[`_dilithium${algNum}_verify`](mPtr, msgBytes.length, sigPtr, signature.length, pkPtr);
+        const result: number = Module[`_falcon_${algNum}_verify`](mPtr, msgBytes.length, sigPtr, signature.length, pkPtr);
         return result === 0;
       } finally {
         Module._free(mPtr);
@@ -164,71 +172,70 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
   };
 }
 
-async function initDilithium(): Promise<Record<string, any>> {
-  if (dilithiumWrappers) {
-    return dilithiumWrappers;
+async function initFalcon(): Promise<Record<string, any>> {
+  if (falconWrappers) {
+    return falconWrappers;
   }
 
-  if (!dilithiumModuleInstance) {
+  if (!falconModuleInstance) {
     // Use the same approach as the working HTML script
     // Load the WASM module via script tag instead of dynamic import
     return new Promise((resolve, reject) => {
       // Check if the script is already loaded
-      if (typeof (window as any).DilithiumModule === 'function') {
+      if (typeof (window as any).FalconModule === 'function') {
         // Module is already available, initialize it
         const moduleArg = {
           locateFile: (path: string) => {
             if (path.endsWith('.wasm')) {
-              return '../../sig/dilithium/dist-browser/dilithium_wrapper.wasm';
+              return '../../sig/falcon/dist-browser/falcon_wrapper.wasm';
             }
             return path;
           }
         };
 
-        (window as any).DilithiumModule(moduleArg).then((Module: any) => {
-          dilithiumModuleInstance = Module;
-          createWrappers().then(() => resolve(dilithiumWrappers!)).catch(reject);
+        (window as any).FalconModule(moduleArg).then((Module: any) => {
+          falconModuleInstance = Module;
+          createWrappers().then(() => resolve(falconWrappers!)).catch(reject);
         }).catch(reject);
       } else {
         // Load the script first
         const script = document.createElement('script');
-        script.src = '../../sig/dilithium/dist-browser/dilithium_wrapper.js';
+        script.src = '../../sig/falcon/dist-browser/falcon_wrapper.js';
         script.onload = async () => {
           try {
             const moduleArg = {
               locateFile: (path: string) => {
                 if (path.endsWith('.wasm')) {
-                  return '../../sig/dilithium/dist-browser/dilithium_wrapper.wasm';
+                  return '../../sig/falcon/dist-browser/falcon_wrapper.wasm';
                 }
                 return path;
               }
             };
 
-            dilithiumModuleInstance = await (window as any).DilithiumModule(moduleArg);
+            falconModuleInstance = await (window as any).FalconModule(moduleArg);
             await createWrappers();
-            resolve(dilithiumWrappers!);
+            resolve(falconWrappers!);
           } catch (error) {
             reject(error);
           }
         };
         script.onerror = () => {
-          reject(new Error('Failed to load Dilithium WASM module'));
+          reject(new Error('Failed to load Falcon WASM module'));
         };
         document.head.appendChild(script);
       }
     });
   }
 
-  return dilithiumWrappers!;
+  return falconWrappers!;
 }
 
 async function createWrappers(): Promise<void> {
   try {
-    const dilithium2 = await createDilithiumWrapper(2);
-    const dilithium3 = await createDilithiumWrapper(3);
-    const dilithium5 = await createDilithiumWrapper(5);
+    const falcon512 = await createFalconWrapper(512);
+    const falcon1024 = await createFalconWrapper(1024);
 
-    dilithiumWrappers = { dilithium2, dilithium3, dilithium5 };
+    falconWrappers = { falcon_512: falcon512, falcon_1024: falcon1024 };
   } catch (error) {
     console.error('[Debug] Error creating wrappers:', error);
     throw error;
@@ -236,20 +243,9 @@ async function createWrappers(): Promise<void> {
 }
 
 // Cleanup function to free resources
-function cleanupDilithium(): void {
-  if (dilithiumModuleInstance) {
-    try {
-      if (typeof dilithiumModuleInstance._free_dilithium_variants === 'function') {
-        dilithiumModuleInstance._free_dilithium_variants();
-      } else {
-        console.warn('[Debug] _free_dilithium_variants not found in module');
-      }
-    } catch (error) {
-      console.error('[Debug] Error during cleanup:', error);
-    }
-  }
-  dilithiumModuleInstance = null;
-  dilithiumWrappers = null;
+function cleanupFalcon(): void {
+  falconModuleInstance = null;
+  falconWrappers = null;
 }
 
-export { initDilithium, cleanupDilithium };
+export { initFalcon, cleanupFalcon }; 

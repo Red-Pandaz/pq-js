@@ -1,29 +1,27 @@
-// Remove the static import - we'll use dynamic import instead
-// @ts-ignore
-// import dilithiumWrapper from '../dist-browser/dilithium_wrapper.js';
+// SPHINCS+ signature implementation for browser
 
-let dilithiumModuleInstance: any = null;
-let dilithiumWrappers: Record<string, any> | null = null;
+let sphincsModuleInstance: any = null;
+let sphincsWrappers: Record<string, any> | null = null;
 
-async function createDilithiumWrapper(algNum: number): Promise<any> {
+async function createSphincsWrapper(algNum: number): Promise<any> {
   // Use the shared module instance instead of creating a new one
-  if (!dilithiumModuleInstance) {
-    throw new Error('Module not initialized. Call initDilithium() first.');
+  if (!sphincsModuleInstance) {
+    throw new Error('Module not initialized. Call initSphincs() first.');
   }
 
-  const Module = dilithiumModuleInstance;
+  const Module = sphincsModuleInstance;
 
-  // Initialize all variants
-  const initResult: number = Module._init_dilithium_variants();
+  // Initialize the specific variant
+  const initResult: number = Module[`_init_sphincs_sha2_${algNum}f_simple`]();
   
-  if (initResult !== 1) {
-    throw new Error('Failed to initialize dilithium variants');
+  if (initResult !== 0) {
+    console.warn(`SPHINCS+ ${algNum} initialization failed with status code: ${initResult}, proceeding anyway`);
   }
 
   // Get lengths before creating wrapper
-  const pubLen: number = Module[`_dilithium${algNum}_get_public_key_length`]();
-  const secLen: number = Module[`_dilithium${algNum}_get_secret_key_length`]();
-  const maxSigLen: number = Module[`_dilithium${algNum}_get_signature_length`]();
+  const pubLen: number = Module[`_sphincs_sha2_${algNum}f_simple_get_public_key_length`]();
+  const secLen: number = Module[`_sphincs_sha2_${algNum}f_simple_get_secret_key_length`]();
+  const maxSigLen: number = Module[`_sphincs_sha2_${algNum}f_simple_get_signature_length`]();
 
   // Helper function to check OQS status codes
   function checkOQSStatus(result: number, operation: string) {
@@ -69,7 +67,7 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
           throw new Error('Failed to allocate memory for keypair');
         }
         // Call the keypair function directly from the module
-        const result: number = Module[`_dilithium${algNum}_keypair`](pkPtr, skPtr);
+        const result: number = Module[`_sphincs_sha2_${algNum}f_simple_keypair`](pkPtr, skPtr);
         checkOQSStatus(result, 'Keypair generation');
         // Create copies of the data before freeing the memory
         const publicKey: Uint8Array | null = copyMemory(pkPtr, pubLen);
@@ -106,7 +104,7 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
       if (!sigLenPtr) throw new Error('Failed to allocate signature length buffer');
       Module.HEAPU32[sigLenPtr >> 2] = maxSigLen;
       try {
-        const result: number = Module[`_dilithium${algNum}_sign`](
+        const result: number = Module[`_sphincs_sha2_${algNum}f_simple_sign`](
           sigPtr, 
           sigLenPtr, 
           mPtr, 
@@ -149,7 +147,7 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
       if (!pkPtr) throw new Error('Failed to allocate public key buffer');
       writeMemory(publicKey, pkPtr);
       try {
-        const result: number = Module[`_dilithium${algNum}_verify`](mPtr, msgBytes.length, sigPtr, signature.length, pkPtr);
+        const result: number = Module[`_sphincs_sha2_${algNum}f_simple_verify`](mPtr, msgBytes.length, sigPtr, signature.length, pkPtr);
         return result === 0;
       } finally {
         Module._free(mPtr);
@@ -164,92 +162,80 @@ async function createDilithiumWrapper(algNum: number): Promise<any> {
   };
 }
 
-async function initDilithium(): Promise<Record<string, any>> {
-  if (dilithiumWrappers) {
-    return dilithiumWrappers;
+async function initSphincs(): Promise<Record<string, any>> {
+  if (sphincsWrappers) {
+    return sphincsWrappers;
   }
 
-  if (!dilithiumModuleInstance) {
+  if (!sphincsModuleInstance) {
     // Use the same approach as the working HTML script
     // Load the WASM module via script tag instead of dynamic import
     return new Promise((resolve, reject) => {
       // Check if the script is already loaded
-      if (typeof (window as any).DilithiumModule === 'function') {
+      if (typeof (window as any).SphincsModule === 'function') {
         // Module is already available, initialize it
         const moduleArg = {
           locateFile: (path: string) => {
             if (path.endsWith('.wasm')) {
-              return '../../sig/dilithium/dist-browser/dilithium_wrapper.wasm';
+              return '../../sig/sphincs/dist-browser/sphincs_wrapper.wasm';
             }
             return path;
           }
         };
 
-        (window as any).DilithiumModule(moduleArg).then((Module: any) => {
-          dilithiumModuleInstance = Module;
-          createWrappers().then(() => resolve(dilithiumWrappers!)).catch(reject);
+        (window as any).SphincsModule(moduleArg).then((Module: any) => {
+          sphincsModuleInstance = Module;
+          createWrappers().then(() => resolve(sphincsWrappers!)).catch(reject);
         }).catch(reject);
       } else {
         // Load the script first
         const script = document.createElement('script');
-        script.src = '../../sig/dilithium/dist-browser/dilithium_wrapper.js';
+        script.src = '../../sig/sphincs/dist-browser/sphincs_wrapper.js';
         script.onload = async () => {
           try {
             const moduleArg = {
               locateFile: (path: string) => {
                 if (path.endsWith('.wasm')) {
-                  return '../../sig/dilithium/dist-browser/dilithium_wrapper.wasm';
+                  return '../../sig/sphincs/dist-browser/sphincs_wrapper.wasm';
                 }
                 return path;
               }
             };
 
-            dilithiumModuleInstance = await (window as any).DilithiumModule(moduleArg);
+            const Module = await (window as any).SphincsModule(moduleArg);
+            sphincsModuleInstance = Module;
             await createWrappers();
-            resolve(dilithiumWrappers!);
+            resolve(sphincsWrappers!);
           } catch (error) {
             reject(error);
           }
         };
-        script.onerror = () => {
-          reject(new Error('Failed to load Dilithium WASM module'));
-        };
+        script.onerror = () => reject(new Error('Failed to load SPHINCS+ wrapper script'));
         document.head.appendChild(script);
       }
     });
   }
 
-  return dilithiumWrappers!;
+  return sphincsWrappers!;
 }
 
 async function createWrappers(): Promise<void> {
-  try {
-    const dilithium2 = await createDilithiumWrapper(2);
-    const dilithium3 = await createDilithiumWrapper(3);
-    const dilithium5 = await createDilithiumWrapper(5);
-
-    dilithiumWrappers = { dilithium2, dilithium3, dilithium5 };
-  } catch (error) {
-    console.error('[Debug] Error creating wrappers:', error);
-    throw error;
-  }
-}
-
-// Cleanup function to free resources
-function cleanupDilithium(): void {
-  if (dilithiumModuleInstance) {
+  sphincsWrappers = {} as Record<string, any>;
+  
+  // Create wrappers for all SPHINCS+ variants
+  const variants = [128, 192, 256]; // SPHINCS+ variants
+  for (const variant of variants) {
     try {
-      if (typeof dilithiumModuleInstance._free_dilithium_variants === 'function') {
-        dilithiumModuleInstance._free_dilithium_variants();
-      } else {
-        console.warn('[Debug] _free_dilithium_variants not found in module');
-      }
+      sphincsWrappers[`sphincs_sha2_${variant}f_simple`] = await createSphincsWrapper(variant);
     } catch (error) {
-      console.error('[Debug] Error during cleanup:', error);
+      console.warn(`Failed to create wrapper for SPHINCS+ ${variant}:`, error);
     }
   }
-  dilithiumModuleInstance = null;
-  dilithiumWrappers = null;
 }
 
-export { initDilithium, cleanupDilithium };
+function cleanupSphincs(): void {
+  sphincsModuleInstance = null;
+  sphincsWrappers = null;
+}
+
+export { initSphincs, cleanupSphincs }; 

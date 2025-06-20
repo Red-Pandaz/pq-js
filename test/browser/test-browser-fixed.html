@@ -104,7 +104,7 @@
                 
                 // Load the WASM modules directly using the working approach
                 const script = document.createElement('script');
-                script.src = './dist-browser/sig/dilithium_wrapper.js';
+                script.src = '../../dist-browser/sig/dilithium_wrapper.js';
                 script.onload = async () => {
                     try {
                         console.log('WASM module loaded, initializing...');
@@ -113,7 +113,7 @@
                         const Module = await window.Module({
                             locateFile: (path) => {
                                 if (path.endsWith('.wasm')) {
-                                    return './dist-browser/sig/dilithium_wrapper.wasm';
+                                    return '../../dist-browser/sig/dilithium_wrapper.wasm';
                                 }
                                 return path;
                             }
