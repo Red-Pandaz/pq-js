@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 const createMcElieceFull = require('./classic_mceliece_wrapper.js');
 const createMcElieceSmall = require('./classic_mceliece_wrapper_small.js');
 
@@ -100,7 +102,12 @@ async function createMcElieceWrapper(variant: string, createModule: () => Promis
 
 async function initSmall(): Promise<Record<string, any>> {
   if (smallWrappers) return smallWrappers;
-  if (!smallModuleInstance) smallModuleInstance = await createMcElieceSmall();
+  if (!smallModuleInstance) {
+    const moduleOverrides = {
+      wasmBinary: fs.readFileSync(path.join(__dirname, 'classic_mceliece_wrapper_small.wasm')),
+    };
+    smallModuleInstance = await createMcElieceSmall(moduleOverrides);
+  }
   smallWrappers = {} as Record<string, any>;
   for (const variant of smallVariantNames) {
     smallWrappers[variant] = await createMcElieceWrapper(variant, createMcElieceSmall);
@@ -110,7 +117,12 @@ async function initSmall(): Promise<Record<string, any>> {
 
 async function initFull(): Promise<Record<string, any>> {
   if (fullWrappers) return fullWrappers;
-  if (!fullModuleInstance) fullModuleInstance = await createMcElieceFull();
+  if (!fullModuleInstance) {
+    const moduleOverrides = {
+      wasmBinary: fs.readFileSync(path.join(__dirname, 'classic_mceliece_wrapper.wasm')),
+    };
+    fullModuleInstance = await createMcElieceFull(moduleOverrides);
+  }
   fullWrappers = {} as Record<string, any>;
   for (const variant of fullVariantNames) {
     fullWrappers[variant] = await createMcElieceWrapper(variant, createMcElieceFull);

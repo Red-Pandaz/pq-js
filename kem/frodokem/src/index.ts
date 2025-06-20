@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 const createFrodoKEMModule = require('./frodokem_wrapper.js');
 
 const frodokemVariantNames: string[] = [
@@ -91,7 +93,12 @@ async function createFrodoKEMWrapper(variant: string): Promise<any> {
 
 async function initFrodokem(): Promise<Record<string, any>> {
   if (frodokemWrappers) return frodokemWrappers;
-  if (!frodokemModuleInstance) frodokemModuleInstance = await createFrodoKEMModule();
+  if (!frodokemModuleInstance) {
+    const moduleOverrides = {
+      wasmBinary: fs.readFileSync(path.join(__dirname, 'frodokem_wrapper.wasm')),
+    };
+    frodokemModuleInstance = await createFrodoKEMModule(moduleOverrides);
+  }
   frodokemWrappers = {} as Record<string, any>;
   for (const variant of frodokemVariantNames) {
     frodokemWrappers[variant] = await createFrodoKEMWrapper(variant);

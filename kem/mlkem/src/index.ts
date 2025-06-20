@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 const createMLKEMModule = require('./mlkem_wrapper.js');
 
 const mlkemVariantNames: string[] = [
@@ -88,7 +90,12 @@ async function createMLKEMWrapper(variant: string): Promise<any> {
 
 async function initMlkem(): Promise<Record<string, any>> {
   if (mlkemWrappers) return mlkemWrappers;
-  if (!mlkemModuleInstance) mlkemModuleInstance = await createMLKEMModule();
+  if (!mlkemModuleInstance) {
+    const moduleOverrides = {
+      wasmBinary: fs.readFileSync(path.join(__dirname, 'mlkem_wrapper.wasm')),
+    };
+    mlkemModuleInstance = await createMLKEMModule(moduleOverrides);
+  }
   mlkemWrappers = {} as Record<string, any>;
   for (const variant of mlkemVariantNames) {
     mlkemWrappers[variant] = await createMLKEMWrapper(variant);

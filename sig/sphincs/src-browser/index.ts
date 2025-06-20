@@ -14,8 +14,10 @@ async function createSphincsWrapper(algNum: number): Promise<any> {
   // Initialize the specific variant
   const initResult: number = Module[`_init_sphincs_sha2_${algNum}f_simple`]();
   
-  if (initResult !== 0) {
-    console.warn(`SPHINCS+ ${algNum} initialization failed with status code: ${initResult}, proceeding anyway`);
+  // OQS C functions often return 0 for success, but let's be flexible
+  // as long as it's not a negative error code.
+  if (initResult < 0) {
+    throw new Error(`SPHINCS+ ${algNum} initialization failed with status code: ${initResult}`);
   }
 
   // Get lengths before creating wrapper

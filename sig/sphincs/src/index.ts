@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 const createSphincsModule = require('./sphincs_wrapper.js');
 
 let sphincsModuleInstance: any = null;
@@ -145,7 +147,12 @@ async function createSphincsWrapper(variant: string): Promise<any> {
 
 async function initSphincs(): Promise<Record<string, any>> {
   if (sphincsWrappers) return sphincsWrappers;
-  if (!sphincsModuleInstance) sphincsModuleInstance = await createSphincsModule();
+  if (!sphincsModuleInstance) {
+    const moduleOverrides = {
+      wasmBinary: fs.readFileSync(path.join(__dirname, 'sphincs_wrapper.wasm')),
+    };
+    sphincsModuleInstance = await createSphincsModule(moduleOverrides);
+  }
 
   // Optionally, check moduleInstance for required functions here
 

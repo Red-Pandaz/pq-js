@@ -13,29 +13,10 @@ const wrappers = [
   'kem/classic_mceliece',
 ];
 
-// 1. Copy wrapper output files to dist/[sig|kem]/[algo]
-wrappers.forEach(wrapper => {
-  const algo = path.basename(wrapper);
-  const group = wrapper.split('/')[0]; // 'sig' or 'kem'
-
-  // For all algorithms, use dist-browser directory since that's where the browser-compatible builds are
-  let srcDir = path.join(root, wrapper, 'dist-browser');
-  // Fallback to dist if dist-browser doesn't exist
-  if (!fs.existsSync(srcDir)) {
-    srcDir = path.join(root, wrapper, 'dist');
-  }
-
-  const destDir = path.join(distDir, group, algo);
-
-  if (!fs.existsSync(srcDir)) {
-    console.warn(`⚠️  Wrapper build output not found: ${srcDir}`);
-    return;
-  }
-
+function copyDirContents(srcDir, destDir) {
   if (!fs.existsSync(destDir)) {
     fs.mkdirSync(destDir, { recursive: true });
   }
-
   const files = fs.readdirSync(srcDir);
   files.forEach(file => {
     const src = path.join(srcDir, file);
@@ -43,6 +24,22 @@ wrappers.forEach(wrapper => {
     fs.copyFileSync(src, dest);
     console.log(`Copied ${src} → ${dest}`);
   });
+}
+
+// 1. Copy wrapper output files to dist/[sig|kem]/[algo] for Node.js usage
+wrappers.forEach(wrapper => {
+  const algo = path.basename(wrapper);
+  const group = wrapper.split('/')[0]; // 'sig' or 'kem'
+
+  const srcDir = path.join(root, wrapper, 'dist');
+  const destDir = path.join(distDir, group, algo);
+
+  if (!fs.existsSync(srcDir)) {
+    console.warn(`⚠️  Wrapper build output not found: ${srcDir}`);
+    return;
+  }
+
+  copyDirContents(srcDir, destDir);
 
   // Move compiled index.js if in dist/[...]/src/index.js
   const indexPath = path.join(destDir, 'src', 'index.js');
@@ -64,31 +61,21 @@ wrappers.forEach(wrapper => {
   const algo = path.basename(wrapper);
   const group = wrapper.split('/')[0]; // 'sig' or 'kem'
 
-  // For all algorithms, use dist-browser directory since that's where the browser-compatible builds are
-  let srcDir = path.join(root, wrapper, 'dist-browser');
-  // Fallback to dist if dist-browser doesn't exist
-  if (!fs.existsSync(srcDir)) {
-    srcDir = path.join(root, wrapper, 'dist');
-  }
-  
+  const srcDir = path.join(root, wrapper, 'dist-browser');
   const destDir = path.join(distBrowserDir, group, algo);
 
   if (!fs.existsSync(srcDir)) {
-    console.warn(`⚠️  Wrapper build output not found for browser: ${srcDir}`);
+    // Fallback to dist if dist-browser doesn't exist, as some may not have a browser-specific build
+    const fallbackSrcDir = path.join(root, wrapper, 'dist');
+    if (fs.existsSync(fallbackSrcDir)) {
+      copyDirContents(fallbackSrcDir, destDir);
+    } else {
+      console.warn(`⚠️  Wrapper build output not found for browser: ${srcDir} and no fallback.`);
+    }
     return;
   }
 
-  if (!fs.existsSync(destDir)) {
-    fs.mkdirSync(destDir, { recursive: true });
-  }
-
-  const files = fs.readdirSync(srcDir);
-  files.forEach(file => {
-    const src = path.join(srcDir, file);
-    const dest = path.join(destDir, file);
-    fs.copyFileSync(src, dest);
-    console.log(`Copied ${src} → ${dest}`);
-  });
+  copyDirContents(srcDir, destDir);
 });
 
 // 3. Move dist/src/*.js to dist/

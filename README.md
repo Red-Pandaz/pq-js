@@ -124,6 +124,34 @@ npm run test:kems
 npm run test:signatures
 ```
 
+## 🧪 Browser Wrapper Testing
+
+To test the browser-compatible wrappers and ensure all algorithms work in a browser environment:
+
+1. **Build the browser version:**
+   ```bash
+   npm run build-browser
+   ```
+
+2. **Start a local HTTP server in the project root:**
+   ```bash
+   npx http-server . -p 8081 -c-1
+   ```
+   > You can use any static server; `http-server` is just a simple option.
+
+3. **Open the browser test suite:**
+   ```
+   http://localhost:8081/test-browser.html
+   ```
+
+4. **View results:**
+   - The browser console will display test results for all supported algorithms.
+   - You should see "All tests passed" and no red errors in the console if everything is working.
+
+**Troubleshooting:**
+- If you see 404 errors for wrapper `.js` or `.wasm` files, ensure you are serving from the project root and that the `dist-browser` directory exists and is up to date.
+- If you see initialization errors, make sure you have run `npm run build-browser` and that your browser supports WebAssembly.
+
 ## 📚 API Reference
 
 ### Signature Schemes
@@ -210,130 +238,4 @@ const mceliece460896 = pq.kem.mceliece.classic_mceliece_460896;
 This package provides two builds for Classic McEliece KEM:
 
 - **Small build:**  
-  Includes only the small and medium variants (`348864`, `348864f`, `460896`, `460896f`).  
-  These variants are supported with a moderate memory footprint (512MB RAM reserved) and will work on most systems.
-
-- **Full build:**  
-  Includes all Classic McEliece variants, including the largest (`6688128`, `6688128f`, `6960119`, `6960119f`, `8192128`, `8192128f`).  
-  **Warning:** The largest variants require up to 2GB of RAM due to their extremely large key and ciphertext sizes. They may not work in all environments, especially in browsers or on systems with limited memory.
-
-### Usage
-
-- **Default (small/medium variants, efficient):**
-  ```js
-  const { createPQ } = require('pq-js');
-  const pq = await createPQ();
-  // pq.mceliece will only include the small/medium variants
-  ```
-  Only the small/medium WASM build is loaded (512MB RAM reserved).
-
-- **Full (all variants, including large, 2GB RAM):**
-  ```js
-  const { createPQFull } = require('pq-js');
-  const pq = await createPQFull();
-  // pq.mceliece will include all variants, but 2GB RAM is reserved
-  ```
-  The full WASM build is loaded (2GB RAM reserved for Classic McEliece).
-
-**Note:**  
-- If you only use `createPQ`, the large/2GB WASM build is never loaded and no extra RAM is reserved.  
-- Only use `createPQFull` if you need the largest Classic McEliece variants and your system can allocate sufficient memory.
-
-## 🔧 CLI Reference
-
-### Available Algorithms
-
-**Signature Schemes:**
-- `dilithium2`, `dilithium3`, `dilithium5`
-- `falcon_512`, `falcon_1024`
-- `sphincs_sha2_128f_simple`, `sphincs_sha2_128s_simple`, `sphincs_sha2_192f_simple`, `sphincs_sha2_192s_simple`, `sphincs_sha2_256f_simple`, `sphincs_sha2_256s_simple`
-- `sphincs_shake_128f_simple`, `sphincs_shake_128s_simple`, `sphincs_shake_192f_simple`, `sphincs_shake_192s_simple`, `sphincs_shake_256f_simple`, `sphincs_shake_256s_simple`
-
-**KEM Schemes:**
-- `mlkem_512`, `mlkem_768`, `mlkem_1024`
-- `frodokem_640_aes`, `frodokem_640_shake`, `frodokem_976_aes`, `frodokem_976_shake`, `frodokem_1344_aes`, `frodokem_1344_shake`
-- `classic_mceliece_348864`, `classic_mceliece_348864f`, `classic_mceliece_460896`, `classic_mceliece_460896f`
-
-### Operations
-
-**Signature Operations:**
-- `generateKey` - Generate a new keypair
-- `sign <message> <secret_key_hex>` - Sign a message
-- `verify <message> <signature_hex> <public_key_hex>` - Verify a signature
-
-**KEM Operations:**
-- `generateKey` - Generate a new keypair
-- `encapsulate <public_key_hex>` - Generate shared secret and ciphertext
-- `decapsulate <ciphertext_hex> <secret_key_hex>` - Recover shared secret
-
-## 🛠️ Development
-
-### Project Structure
-```
-pq-js/
-├── sig/           # Signature algorithm implementations
-├── kem/           # KEM algorithm implementations
-├── test/          # Test suites
-├── dist/          # Compiled output (not tracked in git)
-├── cli.ts         # CLI implementation
-├── index.ts       # Main library entry point
-└── package.json   # Project configuration
-```
-
-### Building
-```bash
-npm run build
-```
-
-This compiles TypeScript files and copies WASM wrapper files to the `dist/` directory.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! However, please note that this project was generated with AI assistance and is primarily intended for educational and experimental purposes.
-
-### How to contribute:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/your-feature-name`
-3. **Make your changes**
-4. **Run tests**: `npm test`
-5. **Commit your changes**: `git commit -m 'Add some feature'`
-6. **Push to the branch**: `git push origin feature/your-feature-name`
-7. **Submit a Pull Request**
-
-### Guidelines:
-
-- **Security**: Any security-related changes should be thoroughly reviewed
-- **Testing**: Ensure all tests pass before submitting
-- **Documentation**: Update README.md if adding new features
-- **Code style**: Follow existing TypeScript conventions
-
-### Important Notes:
-
-- This project is built on liboqs 0.13.0 - please maintain compatibility
-- The underlying cryptographic implementations come from liboqs
-- Focus contributions on the JavaScript/TypeScript integration layer
-- Consider the AI-generated nature of this project when contributing
-
-## 🙏 Credits & Acknowledgments
-
-This library is built on top of **liboqs 0.13.0**, the Open Quantum Safe project's library for quantum-resistant cryptographic algorithms.
-
-- **liboqs**: [https://github.com/open-quantum-safe/liboqs](https://github.com/open-quantum-safe/liboqs) (v0.13.0)
-- **Open Quantum Safe**: [https://openquantumsafe.org/](https://openquantumsafe.org/)
-
-The WebAssembly implementations of all cryptographic algorithms in this package are compiled from liboqs 0.13.0 C implementations. This project provides JavaScript/TypeScript bindings and a CLI interface for the liboqs library.
-
-## 🔗 References
-
-- [NIST Post-Quantum Cryptography Standardization](https://www.nist.gov/programs-projects/post-quantum-cryptography)
-- [Dilithium](https://pq-crystals.org/dilithium/)
-- [Falcon](https://falcon-sign.info/)
-- [SPHINCS+](https://sphincs.org/)
-- [ML-KEM](https://pq-crystals.org/kyber/)
-- [FrodoKEM](https://frodokem.org/)
-- [Classic McEliece](https://classic.mceliece.org/)
+  Includes only the small and medium variants (`348864`, `348864f`, `460896`, `

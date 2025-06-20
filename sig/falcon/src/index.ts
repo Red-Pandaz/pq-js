@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 const createFalconModule = require('./falcon_wrapper.js');
 
 let falconModuleInstance: any = null;
@@ -134,7 +136,12 @@ async function createFalconWrapper(variant: string): Promise<any> {
 
 async function initFalcon(): Promise<Record<string, any>> {
   if (falconWrappers) return falconWrappers;
-  if (!falconModuleInstance) falconModuleInstance = await createFalconModule();
+  if (!falconModuleInstance) {
+    const moduleOverrides = {
+      wasmBinary: fs.readFileSync(path.join(__dirname, 'falcon_wrapper.wasm')),
+    };
+    falconModuleInstance = await createFalconModule(moduleOverrides);
+  }
 
   falconWrappers = {} as Record<string, any>;
   for (const variant of falconVariantNames) {

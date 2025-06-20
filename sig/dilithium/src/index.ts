@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 const createDilithiumModule = require('./dilithium_wrapper.js');
 
 let dilithiumModuleInstance: any = null;
@@ -163,7 +165,10 @@ async function initDilithium(): Promise<Record<string, any>> {
   }
 
   if (!dilithiumModuleInstance) {
-    dilithiumModuleInstance = await createDilithiumModule();
+    const moduleOverrides = {
+      wasmBinary: fs.readFileSync(path.join(__dirname, 'dilithium_wrapper.wasm')),
+    };
+    dilithiumModuleInstance = await createDilithiumModule(moduleOverrides);
 
     // Verify that the module is properly initialized
     if (!dilithiumModuleInstance || typeof dilithiumModuleInstance._init_dilithium_variants !== 'function') {

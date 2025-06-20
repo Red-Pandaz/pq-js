@@ -9,20 +9,14 @@ async function createFalconWrapper(algNum: number): Promise<any> {
 
   const Module = falconModuleInstance;
 
-  // Debug: Check what functions are available
-  console.log(`[Debug] Available Falcon functions for ${algNum}:`, Object.keys(Module).filter(key => key.includes('falcon')));
-
-  // Try to find the initialization function
+  // Initialize the specific variant
   const initFuncName = `_init_falcon_${algNum}`;
-  if (!Module[initFuncName]) {
-    console.warn(`[Debug] Initialization function ${initFuncName} not found, proceeding without initialization`);
-  } else {
-    // Try initialization but don't fail if it returns an error
-    console.log(`[Debug] Calling ${initFuncName}`);
+  if (Module[initFuncName]) {
     const initResult: number = Module[initFuncName]();
-    console.log(`[Debug] Initialization result: ${initResult}`);
-    if (initResult !== 0) {
-      console.warn(`[Debug] Falcon ${algNum} initialization failed with status code: ${initResult}, proceeding anyway`);
+    // OQS C functions often return 0 for success, but let's be flexible
+    // as long as it's not a negative error code.
+    if (initResult < 0) {
+      throw new Error(`Falcon ${algNum} initialization failed with status code: ${initResult}`);
     }
   }
 
